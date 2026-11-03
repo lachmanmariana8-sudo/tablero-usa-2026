@@ -7,9 +7,10 @@
   --live:#c22b1e;
   --shadow:0 1px 2px rgba(20,32,48,.07),0 10px 28px rgba(20,32,48,.10);
   --shadow-hover:0 2px 4px rgba(20,32,48,.09),0 18px 44px rgba(20,32,48,.16);
-  --glow-num:none;
-  --glow-d:0 1px 0 rgba(255,255,255,.6);
-  --glow-r:0 1px 0 rgba(255,255,255,.6);
+  /* En claro, las cifras de tinta ganan cuerpo con relieve; el halo de color queda para las cifras ya coloreadas */
+  --glow-num:0 1px 0 rgba(255,255,255,.7),0 2px 10px rgba(20,32,48,.18);
+  --glow-d:0 0 1px rgba(18,74,133,.35),0 0 12px rgba(18,74,133,.30);
+  --glow-r:0 0 1px rgba(142,31,28,.35),0 0 12px rgba(178,52,42,.28);
   --card-sheen:linear-gradient(180deg,rgba(255,255,255,.65),rgba(255,255,255,0) 42%);
   --radius:16px;
 }
@@ -98,7 +99,9 @@ main{max-width:1240px;margin:0 auto;padding:16px clamp(16px,4vw,40px) 60px}
 /* ---------- cards ---------- */
 .card,.stat{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
 .card{padding:18px 22px;margin-top:16px;overflow:hidden}
-.card::before,.stat::before{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--card-sheen);pointer-events:none}
+/* El brillo es decorativo: va detrás del contenido, nunca sobre el texto */
+.card::before,.stat::before{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--card-sheen);pointer-events:none;z-index:0}
+.card>*,.stat>*{position:relative;z-index:1}
 .card-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:8px}
 .stat{padding:16px 18px;overflow:hidden}
 .stat .k{font-size:11.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)}
@@ -109,11 +112,13 @@ main{max-width:1240px;margin:0 auto;padding:16px clamp(16px,4vw,40px) 60px}
 .stat .d{font-size:12.5px;color:var(--ink-2)}
 .stat .src{font-size:11px;color:var(--ink-3);margin-top:7px}
 .stat-anchor .v{color:var(--accent)}
+.stat-anchor .v{text-shadow:0 0 1px rgba(156,63,32,.3),0 0 16px rgba(192,83,46,.32)}
 [data-theme="dark"] .stat-anchor .v{text-shadow:0 0 18px rgba(224,106,64,.45)}
 /* Pulso de la jornada: cifras en vivo con borde encendido */
 .stat-live{border-color:color-mix(in srgb,var(--live) 38%,var(--line))}
 .stat-live .v{color:var(--live)}
 .stat-live .k{color:var(--live);opacity:.85}
+.stat-live .v{text-shadow:0 0 1px rgba(150,30,20,.3),0 0 18px rgba(194,43,30,.34)}
 [data-theme="dark"] .stat-live .v{text-shadow:0 0 20px rgba(255,69,56,.45)}
 [data-theme="dark"] .stat-live{box-shadow:var(--shadow),0 0 0 1px rgba(255,69,56,.12),0 0 28px -12px rgba(255,69,56,.5)}
 .card-incident{margin-top:14px;border-left:4px solid var(--live)}
@@ -171,6 +176,7 @@ h2.sec-title{font-size:27px;text-transform:uppercase;margin:28px 0 4px}
 .sd-race .meta{font-size:12px;color:var(--ink-2);margin-top:6px}
 .chip-d,.chip-r{font-weight:700}
 .chip-d{color:var(--dem)}.chip-r{color:var(--safe-r)}
+.chip-d,.chip-r{text-shadow:none}
 [data-theme="dark"] .chip-d{color:#7fb1e8;text-shadow:var(--glow-d)}
 [data-theme="dark"] .chip-r{color:#f0897b;text-shadow:var(--glow-r)}
 
@@ -178,6 +184,8 @@ h2.sec-title{font-size:27px;text-transform:uppercase;margin:28px 0 4px}
 .hemi{display:block;width:min(680px,100%);margin:6px auto 0}
 .hemi-total{font-family:"Big Shoulders Display",sans-serif;font-weight:800;font-size:44px}
 .hemi-d{fill:var(--dem)}.hemi-r{fill:var(--safe-r)}
+.hemi-d{filter:drop-shadow(0 0 7px rgba(18,74,133,.35))}
+.hemi-r{filter:drop-shadow(0 0 7px rgba(142,31,28,.32))}
 [data-theme="dark"] .hemi-d{fill:#7fb1e8;filter:drop-shadow(0 0 10px rgba(94,156,224,.55))}
 [data-theme="dark"] .hemi-r{fill:#f0897b;filter:drop-shadow(0 0 10px rgba(236,101,82,.5))}
 .hemi-maj{font:700 15px "DM Mono",monospace;fill:var(--ink)}
@@ -208,6 +216,7 @@ h2.sec-title{font-size:27px;text-transform:uppercase;margin:28px 0 4px}
 .scen-card::before{content:"";position:absolute;inset:0;background:var(--card-sheen);pointer-events:none}
 .scen-card h3{font-size:20px;text-transform:uppercase}
 .scen-prob{font-family:"Big Shoulders Display",sans-serif;font-weight:800;font-size:52px;line-height:1;color:var(--accent);text-shadow:var(--glow-num)}
+.scen-prob{text-shadow:0 0 1px rgba(156,63,32,.32),0 0 20px rgba(192,83,46,.34)}
 [data-theme="dark"] .scen-prob{text-shadow:0 0 20px rgba(224,106,64,.5)}
 .scen-prob small{font-size:13px;font-family:"DM Sans",sans-serif;font-weight:600;color:var(--ink-3);text-shadow:none}
 .scen-note{font-size:12.5px;color:var(--ink-2);margin:8px 0}
