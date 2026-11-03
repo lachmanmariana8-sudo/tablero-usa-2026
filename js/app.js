@@ -21,7 +21,7 @@ es:{
   livePill:"Día de la elección · mar 3 nov 2026",
   heroTitle:"Elecciones de medio término · Estados Unidos 2026",
   heroSub:"35 bancas del Senado, las 435 de la Cámara de Representantes y 36 gobernaciones. Mapa estado por estado, escenarios de control del Congreso, variables económicas e impacto para América Latina.",
-  tabMap:"Mapa nacional", tabCongress:"Congreso y escenarios", tabEconomy:"Economía", tabLatam:"América Latina", tabSources:"Fuentes y metodología",
+  tabMap:"Mapa nacional", tabCongress:"Congreso y escenarios", tabEconomy:"Economía", tabLatam:"América Latina",
   boards:{senate:"Senado",governors:"Gobernaciones",house:"Cámara"},
   jornadaTitle:"El pulso de la jornada",
   jornada:{
@@ -73,12 +73,6 @@ es:{
     scen:{dem_sweep:"Demócratas ambas cámaras",divided:"Congreso dividido",gop_hold:"Republicanos retienen"},
     pick:"Elegí un país en la matriz para ver sus canales de impacto."
   },
-  sources:{
-    title:"Fuentes y metodología",
-    method:"Metodología de la corrida",
-    methodText:"Corrida del 3 de noviembre de 2026 (día de la elección, antes del cierre de urnas). Dos líneas de investigación independientes —electoral y económica/regional— relevaron fuentes primarias y de prensa el mismo día; cada cifra, rating y afirmación de escenario conserva su fuente. Regla editorial: el dato entra con fuente verificada o se consigna su ausencia; las proyecciones son siempre de terceros citados, nunca propias. El rating por carrera es la mediana de Cook Political Report, Inside Elections y Sabato's Crystal Ball. Próximas corridas incorporarán resultados oficiales a medida que se publiquen.",
-    electoral:"Fuentes electorales", economic:"Fuentes económicas y regionales", accessed:"consultado"
-  },
   footerLine:"tablero de monitoreo electoral · 3 de noviembre de 2026",
   footerNote:"Elementos de análisis sobre fuentes citadas; las proyecciones pertenecen siempre a los terceros que se citan.",
   keys_en:null
@@ -88,7 +82,7 @@ en:{
   livePill:"Election Day · Tue Nov 3, 2026",
   heroTitle:"United States 2026 Midterm Elections",
   heroSub:"35 Senate seats, all 435 House seats and 36 governorships. A state-by-state map, congressional control scenarios, economic variables and the impact on Latin America.",
-  tabMap:"National map", tabCongress:"Congress & scenarios", tabEconomy:"Economy", tabLatam:"Latin America", tabSources:"Sources & methodology",
+  tabMap:"National map", tabCongress:"Congress & scenarios", tabEconomy:"Economy", tabLatam:"Latin America",
   boards:{senate:"Senate",governors:"Governors",house:"House"},
   jornadaTitle:"Election-day pulse",
   jornada:{
@@ -139,12 +133,6 @@ en:{
     exp:{"alta":"High","media":"Medium","media-baja":"Medium-low"},
     scen:{dem_sweep:"Democrats both chambers",divided:"Divided Congress",gop_hold:"Republicans hold"},
     pick:"Pick a country in the matrix to see its impact channels."
-  },
-  sources:{
-    title:"Sources and methodology",
-    method:"Run methodology",
-    methodText:"Run of November 3, 2026 (Election Day, before polls closed). Two independent research tracks — electoral and economic/regional — surveyed primary and press sources the same day; every figure, rating and scenario claim keeps its source. Editorial rule: a figure enters with a verified source or its absence is stated; projections are always attributed to cited third parties, never our own. Per-race ratings are the median of Cook Political Report, Inside Elections and Sabato's Crystal Ball. Future runs will fold in official results as they are published.",
-    electoral:"Electoral sources", economic:"Economic & regional sources", accessed:"accessed"
   },
   footerLine:"election monitoring dashboard · November 3, 2026",
   footerNote:"Elements of analysis on cited sources; every projection belongs to the third party quoted.",
@@ -571,20 +559,10 @@ function showCountry(code){
 }
 
 /* ---------- sources ---------- */
-function renderSources(){
-  const s = t().sources;
-  const li = x => `<li>${x.name}. <a href="${x.url}" target="_blank" rel="noopener">${x.url}</a> (${s.accessed}: ${x.accessed}).</li>`;
-  $("#sec-fuentes").innerHTML = `
-  <h2 class="sec-title">${s.title}</h2>
-  <div class="card"><h3>${s.method}</h3><p style="font-size:13.5px;color:var(--ink-2)">${s.methodText}</p></div>
-  <div class="card"><h3>${s.electoral}</h3><ol class="src-list">${E.metadata.sources.map(li).join("")}</ol></div>
-  <div class="card"><h3>${s.economic}</h3><ol class="src-list">${M.metadata.sources.map(li).join("")}</ol></div>`;
-}
-
 /* ---------- boot ---------- */
 function renderAll(){
   applyStatic(); renderSummary(); renderBoardSwitch(); paintBoard();
-  renderCongress(); renderEconomy(); renderLatam(); renderSources();
+  renderCongress(); renderEconomy(); renderLatam();
   $("#stateDetail").hidden = true;
 }
 initTheme(); buildMapOnce(); renderAll();
