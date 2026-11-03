@@ -276,7 +276,10 @@ h2.sec-title{font-size:27px;text-transform:uppercase;margin:28px 0 4px}
 @media (max-width:640px){
   .tabs{top:0;position:static}
   .site-header{position:static}
-  .live-pill span:last-child{display:none}
+  /* En pantalla chica la píldora conserva texto: sin él parece un control sin función */
+  .live-pill span:last-child{font-size:0}
+  .live-pill span:last-child::after{content:"EN VIVO";font-size:11px;letter-spacing:.06em}
+  html[lang="en"] .live-pill span:last-child::after{content:"LIVE"}
   .stat .v{font-size:34px}
   .hero-title{font-size:38px}
 }
