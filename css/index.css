@@ -196,6 +196,43 @@ h2.sec-title{font-size:27px;text-transform:uppercase;margin:28px 0 4px}
 .cb-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2);margin-top:8px}
 
 /* ---------- carreras ---------- */
+/* ---------- gráficos de rango y margen ---------- */
+.chart-wrap{overflow-x:auto;overflow-y:hidden;margin:4px 0 2px}
+.rangechart{display:block;width:100%;min-width:660px;height:auto}
+@media (max-width:759px){ .rangechart{min-width:0} }
+.rc-label{font:700 14px "DM Sans",sans-serif;fill:var(--ink)}
+.rc-label-sm{font-size:13px;font-weight:600}
+.rc-sub{font:500 11.5px "DM Mono",monospace;fill:var(--ink-3)}
+.rc-val{font:600 13px "DM Mono",monospace;fill:var(--ink-2)}
+.rc-tick{font:500 11px "DM Mono",monospace;fill:var(--ink-3)}
+.rc-marker{font:700 12px "DM Mono",monospace;fill:var(--accent)}
+.rc-row rect{transition:opacity .15s}
+.rc-row:hover rect{opacity:.82}
+.chart-note{font-size:11.5px;color:var(--ink-3);margin:10px 0 0}
+[data-theme="dark"] .rc-row rect{filter:drop-shadow(0 0 8px rgba(224,106,64,.25))}
+
+/* ---------- matriz de escenarios ---------- */
+.smatrix{overflow-x:auto;padding:16px 18px}
+.sm-head,.sm-row{display:grid;grid-template-columns:132px repeat(3,minmax(190px,1fr));gap:12px;min-width:740px}
+.sm-head{padding-bottom:10px;border-bottom:2px solid var(--line);position:sticky;top:0}
+.sm-head .sm-col b{font-family:"Big Shoulders Display",sans-serif;font-size:17px;text-transform:uppercase;letter-spacing:.01em;color:var(--ink)}
+.sm-row{padding:14px 0;border-bottom:1px solid var(--line)}
+.sm-row:last-child{border-bottom:0}
+.sm-dim{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-ink);padding-top:2px}
+.sm-cell p{margin:0;font-size:12.5px;line-height:1.5;color:var(--ink-2)}
+.sm-cell .srcs{font-size:10.5px;color:var(--ink-3);margin-top:6px}
+
+/* ---------- monogramas ---------- */
+.cand-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cand-one{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.cand-row .vs{font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em}
+.mono-badge{flex:none;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  font-family:"Big Shoulders Display",sans-serif;font-weight:800;font-size:15px;color:#fff;line-height:1}
+.mb-D{background:var(--safe-d)}
+.mb-R{background:var(--safe-r)}
+[data-theme="dark"] .mb-D{background:#2f6fb8;box-shadow:0 0 10px rgba(94,156,224,.4)}
+[data-theme="dark"] .mb-R{background:#b8362c;box-shadow:0 0 10px rgba(236,101,82,.4)}
+
 .race-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:12px}
 .race-card{
   position:relative;border:1px solid var(--line);border-left-width:5px;border-radius:12px;
@@ -205,7 +242,8 @@ h2.sec-title{font-size:27px;text-transform:uppercase;margin:28px 0 4px}
 .race-card::before{content:"";position:absolute;inset:0;background:var(--card-sheen);pointer-events:none}
 .race-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover)}
 .race-card .rc-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.race-card .rc-state{font-family:"Big Shoulders Display",sans-serif;font-weight:700;font-size:19px;letter-spacing:.02em}
+/* El estado es el encabezado de la tarjeta: debe pesar más que los nombres */
+.race-card .rc-state{font-family:"Big Shoulders Display",sans-serif;font-weight:800;font-size:21px;letter-spacing:.02em;color:var(--ink);text-transform:uppercase}
 .race-card .rc-cand{font-size:12.5px;color:var(--ink-2);margin-top:4px}
 .race-card .rc-poll{font-size:11.5px;color:var(--ink-3);margin-top:4px}
 .race-card .rc-poll .mono{color:var(--ink);font-weight:500}

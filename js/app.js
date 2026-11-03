@@ -53,6 +53,7 @@ es:{
     houseBarTitle:"Cámara — composición actual y umbral de mayoría",
     houseBarNote:"La mayoría exige 218 bancas. El consenso identifica 13 distritos toss-up, con boleta genérica D +8,6.",
     closest:"Las carreras más cerradas del Senado", closestSub:"",
+    marginNote:"Margen de la última encuesta disponible en cada carrera.",
     scenTitle:"Escenarios de control", scenSub:"Probabilidades de la mesa de JPMorgan (3-nov-2026). El detalle económico de cada escenario está en la sección Economía.",
     keysTitle:"Las claves de la elección", keysSub:"",
     gb:"Boleta genérica (promedio final)", tossups:"toss-ups", approval:"Aprobación presidencial", earlyVote:"Voto anticipado (récord)"
@@ -60,6 +61,8 @@ es:{
   economy:{
     title:"Economía: punto de partida y escenarios",
     indTitle:"Variables al día de la elección", indSub:"",
+    spTitle:"Reacción esperada del S&P 500 según el resultado",
+    spNote:"Rango esperado para el índice en cada escenario, con su probabilidad.",
     scenTitle:"Qué cambia según el resultado", scenSub:"Análisis de JPMorgan Asset Management, National Bank Financial, Capital.com, Morgan Stanley, Charles Schwab, CEPA y Orlando Ferreres, con atribución en cada punto.",
     fields:{fiscal:"Política fiscal",trade:"Comercio y aranceles",fed_rates:"Fed y tasas",markets:"Mercados",regulation:"Regulación y supervisión"},
     nd:"sin dato verificado"
@@ -68,6 +71,8 @@ es:{
     title:"Impacto para América Latina",
     matrixTitle:"Matriz país × canal de impacto", matrixSub:"El color marca el nivel de exposición de cada país.",
     anchorsTitle:"Anclas de la región",
+    riskTitle:"Riesgo país argentino proyectado por escenario",
+    riskNote:"Rango proyectado en cada escenario frente al valor actual.",
     country:"País / bloque", exposure:"Exposición",
     exp:{"alta":"Alta","media":"Media","media-baja":"Media-baja"},
     scen:{dem_sweep:"Demócratas ambas cámaras",divided:"Congreso dividido",gop_hold:"Republicanos retienen"},
@@ -114,6 +119,7 @@ en:{
     houseBarTitle:"House — current composition and majority threshold",
     houseBarNote:"A majority takes 218 seats. The consensus flags 13 toss-up districts, with a D +8.6 generic ballot.",
     closest:"The closest Senate races", closestSub:"",
+    marginNote:"Margin from the latest available poll in each race.",
     scenTitle:"Control scenarios", scenSub:"Probabilities from JPMorgan's trading desk (Nov 3, 2026). The economic detail of each scenario is in the Economy section.",
     keysTitle:"What this election decides", keysSub:"",
     gb:"Generic ballot (final average)", tossups:"toss-ups", approval:"Presidential approval", earlyVote:"Early vote (record)"
@@ -121,6 +127,8 @@ en:{
   economy:{
     title:"Economy: starting point and scenarios",
     indTitle:"Where things stand on Election Day", indSub:"",
+    spTitle:"Expected S&P 500 reaction by outcome",
+    spNote:"Expected range for the index under each scenario, with its probability.",
     scenTitle:"What changes with each outcome", scenSub:"Analysis from JPMorgan Asset Management, National Bank Financial, Capital.com, Morgan Stanley, Charles Schwab, CEPA and Orlando Ferreres, attributed point by point.",
     fields:{fiscal:"Fiscal policy",trade:"Trade & tariffs",fed_rates:"Fed & rates",markets:"Markets",regulation:"Regulation & oversight"},
     nd:"no verified figure"
@@ -129,6 +137,8 @@ en:{
     title:"Impact on Latin America",
     matrixTitle:"Country × impact-channel matrix", matrixSub:"Color marks each country's exposure level.",
     anchorsTitle:"Regional anchors",
+    riskTitle:"Argentina country risk projected by scenario",
+    riskNote:"Projected range under each scenario against the current level.",
     country:"Country / bloc", exposure:"Exposure",
     exp:{"alta":"High","media":"Medium","media-baja":"Medium-low"},
     scen:{dem_sweep:"Democrats both chambers",divided:"Divided Congress",gop_hold:"Republicans hold"},
@@ -187,6 +197,13 @@ const cdByState = {}; E.house.key_districts.forEach(d=>{
 });
 function ratingBadge(r){ return `<span class="rb" style="background:${COLORS[r]};color:${DARK_FILLS.has(r)?"#fff":"#1b2735"}">${t().ratings[r]}</span>`; }
 function candLine(r){ return `<span class="chip-d">${r.dem_candidate||"—"} (D)</span> vs <span class="chip-r">${r.rep_candidate||"—"} (R)</span>`; }
+function candRow(dem, rep){
+  return `<div class="cand-row">
+    <span class="cand-one">${monogram(dem,"D")}<span class="chip-d">${dem||"—"}</span></span>
+    <span class="vs">vs</span>
+    <span class="cand-one">${monogram(rep,"R")}<span class="chip-r">${rep||"—"}</span></span>
+  </div>`;
+}
 function pollLine(r){ return r.last_poll ? `${t().lastPoll}: ${r.last_poll.pollster} · ${r.last_poll.date} · <span class="mono">${r.last_poll.margin}</span>` : ""; }
 
 /* ---------- static i18n ---------- */
@@ -326,7 +343,7 @@ function renderHouseKeyRaces(){
   <div class="race-list">` + E.house.key_districts.map(d=>`
     <div class="race-card" style="border-left-color:${COLORS[d.rating]}">
       <div class="rc-top"><span class="rc-state">${d.district}</span>${ratingBadge(d.rating)}</div>
-      <div class="rc-cand"><span class="chip-d">${d.dem} (D)</span> vs <span class="chip-r">${d.rep} (R)</span></div>
+      <div class="rc-cand">${candRow(d.dem, d.rep)}</div>
       <div class="rc-poll">${d.notes||""}</div>
     </div>`).join("") + `</div>`;
 }
@@ -403,7 +420,8 @@ function renderCongress(){
   const c = t().congress, p = senateProjection(), gb = E.house.generic_ballot, ctx = E.context;
   const closest = E.senate.races.filter(r=>r.last_poll && ["tossup","lean-d","lean-r"].includes(r.rating))
     .sort((a,b)=>{
-      const m = s=>{const x=s.last_poll.margin.match(/\+?(\d+(?:\.\d+)?)/);return x?parseFloat(x[1]):(s.last_poll.margin.toLowerCase().includes("empate")||s.last_poll.margin.toLowerCase().includes("even")?0:99);};
+      // Un empate es el margen más cerrado: se ordena por el valor con signo, no por el texto.
+      const m = s=>{const r=raceMargin(s); return r && r.v!==null ? Math.abs(r.v) : 99;};
       return m(a)-m(b);
     });
   const keys = (lang==="en" && I18N.en.keys_en) ? I18N.en.keys_en : ctx.keys;
@@ -444,10 +462,12 @@ function renderCongress(){
     </div>
   </div>
   <h2 class="sec-title">${c.closest}</h2><p class="sec-sub">${c.closestSub}</p>
+  <div class="card">${marginBars(closest)}
+    <p class="chart-note">${c.marginNote}</p></div>
   <div class="race-list">${closest.map(r=>`
     <div class="race-card" style="border-left-color:${COLORS[r.rating]}">
       <div class="rc-top"><span class="rc-state">${r.state_name}</span>${ratingBadge(r.rating)}</div>
-      <div class="rc-cand">${candLine(r)}</div>
+      <div class="rc-cand">${candRow(r.dem_candidate, r.rep_candidate)}</div>
       <div class="rc-poll">${pollLine(r)}</div>
     </div>`).join("")}</div>
   <h2 class="sec-title">${c.scenTitle}</h2><p class="sec-sub">${c.scenSub}</p>
@@ -462,6 +482,95 @@ function renderCongress(){
 }
 
 /* ---------- economy ---------- */
+/* ---------- gráficos ---------- */
+const G = window.DATA_GRAFICOS;
+
+/* Barras de rango sobre un eje común: compara escenarios sin perder la amplitud de cada uno. */
+function rangeChart(cfg){
+  // En pantalla angosta la etiqueta sube sobre la barra: si no, las barras quedan fuera de vista.
+  const narrow = isNarrow();
+  const W = narrow?420:760, L = narrow?10:(cfg.labelW||236), R = narrow?26:112,
+        rowH = narrow?88:(cfg.rowH||56), top = narrow?34:30, bot=40;
+  const H = top + cfg.rows.length*rowH + bot;
+  const x = v => L + (v-cfg.min)/(cfg.max-cfg.min)*(W-L-R);
+  const fm = v => (cfg.sign && v>0 ? "+" : "") + fmtNum(v);
+  const ticks = cfg.ticks.map(v=>`
+    <line x1="${x(v)}" y1="${top-8}" x2="${x(v)}" y2="${H-bot+6}" stroke="var(--line)" stroke-width="1"${v===0?' stroke-dasharray="none"':''}/>
+    <text x="${x(v)}" y="${H-bot+22}" text-anchor="middle" class="rc-tick">${fm(v)}</text>`).join("");
+  const zero = cfg.sign ? `<line x1="${x(0)}" y1="${top-10}" x2="${x(0)}" y2="${H-bot+6}" stroke="var(--ink)" stroke-width="1.5"/>` : "";
+  const rows = cfg.rows.map((r,i)=>{
+    const rt = top + i*rowH, y = narrow ? rt+66 : rt + rowH/2, h=16;
+    const x0=x(r.lo), x1=x(r.hi), w=Math.max(x1-x0,4);
+    const bar = `<rect x="${x0}" y="${y-h/2}" width="${w}" height="${h}" rx="4" fill="${r.color}"><title>${r.label}: ${fm(r.lo)} – ${fm(r.hi)} ${cfg.unit}</title></rect>`;
+    if(narrow) return `<g class="rc-row">
+      <text x="0" y="${rt+22}" class="rc-label">${r.label}</text>
+      <text x="0" y="${rt+44}" class="rc-sub">${r.sub||""}</text>
+      <text x="${W}" y="${rt+22}" text-anchor="end" class="rc-val">${fm(r.lo)} – ${fm(r.hi)}</text>
+      ${bar}
+    </g>`;
+    return `<g class="rc-row">
+      <text x="0" y="${y-4}" class="rc-label">${r.label}</text>
+      ${r.sub?`<text x="0" y="${y+13}" class="rc-sub">${r.sub}</text>`:""}
+      ${bar}
+      <text x="${x1+8}" y="${y+5}" class="rc-val">${fm(r.lo)} – ${fm(r.hi)}</text>
+    </g>`;
+  }).join("");
+  const marker = cfg.marker ? `
+    <line x1="${x(cfg.marker.value)}" y1="${top-14}" x2="${x(cfg.marker.value)}" y2="${H-bot+6}" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 3"/>
+    <text x="${x(cfg.marker.value)}" y="${top-20}" text-anchor="middle" class="rc-marker">${cfg.marker.label}</text>` : "";
+  return `<div class="chart-wrap"><svg class="rangechart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${cfg.aria||""}">${ticks}${zero}${rows}${marker}</svg></div>`;
+}
+
+/* Margen de la última encuesta, con signo: a la derecha ventaja demócrata, a la izquierda republicana. */
+function raceMargin(r){
+  const m = String(r.last_poll.margin);
+  if(/^empate|^even|^tie/i.test(m)) return {v:0, tie:true};
+  const hit = m.match(/^([A-Za-zÁÉÍÓÚÑáéíóúñ'’\-]+)\s*\+\s*(\d+(?:[.,]\d+)?)/);
+  if(!hit) return null;
+  const [,name,num] = hit, v = parseFloat(num.replace(",","."));
+  const inName = c => c && c.toLowerCase().includes(name.toLowerCase());
+  if(inName(r.dem_candidate)) return {v, who:r.dem_candidate, party:"D"};
+  if(inName(r.rep_candidate)) return {v:-v, who:r.rep_candidate, party:"R"};
+  return {v:null, who:name, party:"?"};   // tercero en competencia: no entra en el eje
+}
+
+function marginBars(races){
+  const data = races.map(r=>({r, m:raceMargin(r)})).filter(d=>d.m && d.m.v!==null);
+  if(!data.length) return "";
+  const hi = Math.ceil(Math.max(...data.map(d=>Math.abs(d.m.v)))/5)*5;
+  const lo = -hi/3;   // misma escala a ambos lados; se recorta el lado sin datos
+  const lim = hi;
+  const narrow = isNarrow();
+  const W = narrow?420:760, L = narrow?104:168, R = narrow?58:92, rowH = narrow?32:34, top=26, bot=34;
+  const H = top + data.length*rowH + bot;
+  const x = v => L + (v-lo)/(hi-lo)*(W-L-R);
+  const ticks=[-hi/3,0,hi/2,hi].map(v=>`
+    <line x1="${x(v)}" y1="${top-8}" x2="${x(v)}" y2="${H-bot+4}" stroke="var(--line)"/>
+    <text x="${x(v)}" y="${H-bot+20}" text-anchor="middle" class="rc-tick">${v>0?"D+"+v:v<0?"R+"+Math.abs(v):"0"}</text>`).join("");
+  const rows = data.map((d,i)=>{
+    const y = top + i*rowH + rowH/2, h=15, v=d.m.v;
+    const x0 = v>=0 ? x(0) : x(v), w = Math.max(Math.abs(x(v)-x(0)), v===0?3:4);
+    const col = v>0 ? COLORS["safe-d"] : v<0 ? COLORS["safe-r"] : "var(--ink-3)";
+    const lbl = d.m.tie ? (lang==="es"?"empate":"tie") : (v>0?"D+":"R+")+fmtNum(Math.abs(v));
+    return `<g class="rc-row">
+      <text x="0" y="${y+5}" class="rc-label rc-label-sm">${d.r.state_name}</text>
+      <rect x="${x0}" y="${y-h/2}" width="${w}" height="${h}" rx="4" fill="${col}"><title>${d.r.state_name}: ${d.r.last_poll.margin}</title></rect>
+      <text x="${(v>=0?x(v)+8:x(v)-8)}" y="${y+5}" text-anchor="${v>=0?"start":"end"}" class="rc-val">${lbl}</text>
+    </g>`;
+  }).join("");
+  return `<div class="chart-wrap"><svg class="rangechart" viewBox="0 0 ${W} ${H}" role="img">${ticks}
+    <line x1="${x(0)}" y1="${top-10}" x2="${x(0)}" y2="${H-bot+4}" stroke="var(--ink)" stroke-width="1.5"/>${rows}</svg></div>`;
+}
+
+/* Los gráficos cambian de disposición al cruzar este ancho. */
+function isNarrow(){ return window.innerWidth < 760; }
+
+/* Monograma: inicial sobre el color del partido, en lugar de retratos ajenos. */
+function monogram(name, party){
+  const ini = (name||"?").trim().charAt(0).toUpperCase();
+  return `<span class="mono-badge mb-${party}" aria-hidden="true">${ini}</span>`;
+}
+
 /* Formato de cifra y unidad: el número manda, el detalle baja a la nota. */
 function fmtNum(v){
   if(typeof v === "number") return v.toLocaleString(lang==="es" ? "es-AR" : "en-US", {maximumFractionDigits:2});
@@ -491,17 +600,39 @@ function renderEconomy(){
       <div class="trend">${unitTail(i.unit)}${i.trend}</div>
       <div class="src">${i.source} · ${i.as_of}</div>
     </div>`).join("")}</div>
+  <h2 class="sec-title" style="font-size:20px">${ec.spTitle}</h2>
+  <div class="card">${rangeChart({
+      rows: G.sp500_scenarios.rows.map(r=>({
+        label: lang==="es"?r.es:r.en,
+        sub: `${r.prob} % ${lang==="es"?"de probabilidad":"probability"}`,
+        // Color único: el eje y el cero expresan el signo; un color de partido acá significaría otra cosa.
+        lo:r.lo, hi:r.hi, color:"var(--accent)"
+      })),
+      min:-0.5, max:1.5, ticks:[-0.5,0,0.5,1,1.5], sign:true, unit:"%",
+      aria: ec.spTitle
+    })}
+    <p class="chart-note">${ec.spNote} ${G.sp500_scenarios.source}.</p></div>
   <h2 class="sec-title" style="font-size:20px">${ec.scenTitle}</h2><p class="sec-sub">${ec.scenSub}</p>
-  <div class="scen-grid">${M.scenarios.map(s=>`
-    <div class="scen-card">
-      <h3>${lang==="es"?s.label_es:s.label_en}</h3>
-      <p class="scen-note">${s.probability_note}</p>
-      ${["fiscal","trade","fed_rates","markets","regulation"].map(f=>`
-        <details><summary>${ec.fields[f]}</summary>
+  ${scenarioMatrix()}`;
+}
+
+/* Matriz de escenarios: cada dimensión en una fila, los tres resultados en columnas comparables. */
+function scenarioMatrix(){
+  const ec = t().economy, S = M.scenarios;
+  return `<div class="card smatrix">
+    <div class="sm-head">
+      <div class="sm-dim"></div>
+      ${S.map(s=>`<div class="sm-col"><b>${lang==="es"?s.label_es:s.label_en}</b></div>`).join("")}
+    </div>
+    ${["fiscal","trade","fed_rates","markets","regulation"].map(f=>`
+      <div class="sm-row">
+        <div class="sm-dim">${ec.fields[f]}</div>
+        ${S.map(s=>`<div class="sm-cell">
           <p>${lang==="es"?s[f].es:s[f].en}</p>
           <div class="srcs">${s[f].sources.join(" · ")}</div>
-        </details>`).join("")}
-    </div>`).join("")}</div>`;
+        </div>`).join("")}
+      </div>`).join("")}
+  </div>`;
 }
 
 /* ---------- latam ---------- */
@@ -527,6 +658,14 @@ function renderLatam(){
       <div class="d">${lang==="es"?a.d_es:a.d_en}</div>
       <div class="src">${a.src}</div>
     </div>`).join("")}</div>
+  <h2 class="sec-title" style="font-size:20px">${la.riskTitle}</h2>
+  <div class="card">${rangeChart({
+      rows: G.riesgo_pais_ar.rows.map(r=>({label: lang==="es"?r.es:r.en, lo:r.lo, hi:r.hi, color:"var(--accent)"})),
+      min:550, max:1050, ticks:[600,700,800,900,1000], unit:G.riesgo_pais_ar.unit,
+      marker:{value:G.riesgo_pais_ar.current.value, label:`${lang==="es"?"hoy":"today"} ${G.riesgo_pais_ar.current.value}`},
+      aria: la.riskTitle
+    })}
+    <p class="chart-note">${la.riskNote} ${G.riesgo_pais_ar.source} · ${G.riesgo_pais_ar.current.source}.</p></div>
   <h2 class="sec-title" style="font-size:20px">${la.matrixTitle}</h2><p class="sec-sub">${la.matrixSub}</p>
   <div class="card matrix"><table>
     <thead><tr><th>${la.country}</th><th>${la.exposure}</th>${L.dimensions.map(d=>`<th>${dimLabel(d)}</th>`).join("")}</tr></thead>
@@ -565,5 +704,7 @@ function renderAll(){
   renderCongress(); renderEconomy(); renderLatam();
   $("#stateDetail").hidden = true;
 }
+let wasNarrow = isNarrow();
+addEventListener("resize", ()=>{ if(isNarrow()!==wasNarrow){ wasNarrow = isNarrow(); renderAll(); } });
 initTheme(); buildMapOnce(); renderAll();
 })();
