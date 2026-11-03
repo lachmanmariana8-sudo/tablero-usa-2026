@@ -423,13 +423,19 @@ function statusBadge(res){
   if(res.status==="reporting") return `<span class="res-badge res-badge-live">${rt.reporting}${res.pct!=null?" · "+fmtNum(res.pct)+"%":""}</span>`;
   return `<span class="res-badge res-badge-pending">${rt.pending}</span>`;
 }
+/* Se recuerda el estado de la corrida anterior para que, al cambiar (sin reportar→contando→llamada),
+   la ficha tenga un destello en vez de simplemente reaparecer distinta. */
+let prevTileStatus = {};
 function tile(x, boardKey){
   const res = resultFor(boardKey, x.code);
   const base = COLORS[x.rating] || "var(--neutral-state)";
   const cls = res.status==="reporting" ? "is-live" : res.status==="called" ? "is-called" : "";
   const bg = res.status==="called" ? COLORS[res.called_for==="D"?"safe-d":"safe-r"] : `color-mix(in srgb, ${base} 22%, var(--surface-2))`;
   const tip = `${x.name}${res.status!=="not_reported"?" · "+(res.leader||(res.called_for?(res.called_for==="D"?x.dem:x.rep):"")) + (res.margin?" "+res.margin:""):""}`;
-  return `<div class="tile ${cls}" style="background:${bg}" title="${tip}"><span class="tile-dot"></span>${x.code}</div>`;
+  const key = boardKey+":"+x.code;
+  const changed = prevTileStatus[key] !== undefined && prevTileStatus[key] !== res.status;
+  prevTileStatus[key] = res.status;
+  return `<div class="tile ${cls}${changed?" tile-flash":""}" style="background:${bg}" title="${tip}"><span class="tile-dot"></span>${x.code}</div>`;
 }
 function resultRaceCard(x, boardKey){
   const res = resultFor(boardKey, x.code), rt = t().results;
@@ -557,15 +563,17 @@ function hemicycleSVG(segments, total, majorityLabel, leftLabel, rightLabel, cen
   const dotR = Math.max(2.5, Math.min(rowGap*0.42, minChord*0.42));
   const pts=[];
   per.forEach((n,ri)=>{ const r=radii[ri];
-    for(let k=0;k<n;k++){ const a = n===1 ? Math.PI/2 : Math.PI*(1 - k/(n-1)); pts.push({x:cx+r*Math.cos(a), y:cy-r*Math.sin(a), a}); }
+    for(let k=0;k<n;k++){ const a = n===1 ? Math.PI/2 : Math.PI*(1 - k/(n-1)); pts.push({x:cx+r*Math.cos(a), y:cy-r*Math.sin(a), a, ri}); }
   });
   pts.sort((p,q)=> q.a - p.a || p.y - q.y);
   const flat=[]; segments.forEach(s=>{ for(let i=0;i<s.n;i++) flat.push(s); });
+  /* De afuera hacia adentro: la fila de mayor radio (ri más alto) entra primero. */
   const dots = pts.map((p,i)=>{
     const s = flat[i];
     const paint = s.hollow ? `fill="var(--surface)" stroke="${s.color}" stroke-width="2"` : `fill="${s.color}"`;
-    const cls = (!s.hollow && s.color === COLORS["tossup"]) ? ` class="seat-toss"` : "";
-    return `<circle${cls} cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${(s.hollow?dotR-1:dotR).toFixed(1)}" ${paint}><title>${s.label} (${s.n})</title></circle>`;
+    const tossCls = (!s.hollow && s.color === COLORS["tossup"]) ? " seat-toss" : "";
+    const delay = ((rows-1-p.ri) * 90 + (p.ri%2)*6).toFixed(0);
+    return `<circle class="dot-in${tossCls}" style="animation-delay:${delay}ms" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${(s.hollow?dotR-1:dotR).toFixed(1)}" ${paint}><title>${s.label} (${s.n})</title></circle>`;
   }).join("");
   return `<svg class="hemi" viewBox="0 0 ${W} ${H}" role="img" aria-label="${leftLabel} · ${rightLabel}">
     ${dots}
@@ -662,7 +670,7 @@ function rangeChart(cfg){
   const rows = cfg.rows.map((r,i)=>{
     const rt = top + i*rowH, y = narrow ? rt+66 : rt + rowH/2, h=16;
     const x0=x(r.lo), x1=x(r.hi), w=Math.max(x1-x0,4);
-    const bar = `<rect x="${x0}" y="${y-h/2}" width="${w}" height="${h}" rx="4" fill="${r.color}"><title>${r.label}: ${fm(r.lo)} – ${fm(r.hi)} ${cfg.unit}</title></rect>`;
+    const bar = `<rect class="rc-bar" style="animation-delay:${i*60}ms" x="${x0}" y="${y-h/2}" width="${w}" height="${h}" rx="4" fill="${r.color}"><title>${r.label}: ${fm(r.lo)} – ${fm(r.hi)} ${cfg.unit}</title></rect>`;
     if(narrow) return `<g class="rc-row">
       <text x="0" y="${rt+22}" class="rc-label">${r.label}</text>
       <text x="0" y="${rt+44}" class="rc-sub">${r.sub||""}</text>
@@ -715,7 +723,7 @@ function marginBars(races){
     const lbl = d.m.tie ? (lang==="es"?"empate":"tie") : (v>0?"D+":"R+")+fmtNum(Math.abs(v));
     return `<g class="rc-row">
       <text x="0" y="${y+5}" class="rc-label rc-label-sm">${d.r.state_name}</text>
-      <rect x="${x0}" y="${y-h/2}" width="${w}" height="${h}" rx="4" fill="${col}"><title>${d.r.state_name}: ${d.r.last_poll.margin}</title></rect>
+      <rect class="rc-bar" style="animation-delay:${i*60}ms" x="${x0}" y="${y-h/2}" width="${w}" height="${h}" rx="4" fill="${col}"><title>${d.r.state_name}: ${d.r.last_poll.margin}</title></rect>
       <text x="${(v>=0?x(v)+8:x(v)-8)}" y="${y+5}" text-anchor="${v>=0?"start":"end"}" class="rc-val">${lbl}</text>
     </g>`;
   }).join("");
