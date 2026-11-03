@@ -25,3 +25,9 @@ Lenguaje gráfico al nivel de referencia: banda de estado superior, cabecera con
 ## Corrección de coherencia (16:30)
 
 El voto anticipado aparecía con dos valores: 57 millones en el pulso de la jornada y 48,5 millones en Congreso, porque cada sección leía un dataset distinto. Ahora ambas tarjetas y la clave de la elección se sirven de una única función, con la cifra del 2 de noviembre de University of Florida Election Lab. También se corrigió el separador decimal de la boleta genérica, que en castellano mostraba punto.
+
+## Migración de alojamiento (16:50)
+
+El tablero pasó de GitHub Pages a Vercel, proyecto `usa2026` del equipo Ágora Data, desplegando desde la rama `main` sin paso de compilación. El repositorio quedó privado: el código y estas notas de corrida dejaron de ser legibles desde fuera, y la dirección anterior de GitHub Pages ya no responde.
+
+La dirección definitiva será `usa2026.democracia.ar`, pendiente de un registro CNAME en Cloudflare. Mientras tanto el tablero se sirve en `usa2026-three.vercel.app`.
