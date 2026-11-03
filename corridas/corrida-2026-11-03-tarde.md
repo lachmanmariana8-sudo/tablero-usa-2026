@@ -31,3 +31,21 @@ El voto anticipado aparecía con dos valores: 57 millones en el pulso de la jorn
 El tablero pasó de GitHub Pages a Vercel, proyecto `usa2026` del equipo Ágora Data, desplegando desde la rama `main` sin paso de compilación. El repositorio quedó privado: el código y estas notas de corrida dejaron de ser legibles desde fuera, y la dirección anterior de GitHub Pages ya no responde.
 
 La dirección definitiva será `usa2026.democracia.ar`, pendiente de un registro CNAME en Cloudflare. Mientras tanto el tablero se sirve en `usa2026-three.vercel.app`.
+
+## Corrida de cierre (16:35 ET)
+
+**Mercados al cierre de la rueda.** S&P 500 en 7.568,92 (+0,36 %), con el mercado dividido: Dow Jones 51.786,72 (−0,38 %) y Nasdaq 25.372,01 (+0,83 %), ambos incorporados como indicadores propios. Tesoro a 10 años 4,952 %, petróleo WTI 96,09 dólares de liquidación y dólar DXY 101,86. Los indicadores se reordenaron para que la rueda de hoy encabece y el telón macroeconómico quede detrás.
+
+**Mercados de predicción.** Cámara demócrata 93,3 % y Senado 73 % en Kalshi al cierre, cediendo desde el 94 % y el 77 % del mediodía.
+
+**Jornada.** Carolina del Norte extendió el horario en cinco mesas y demora su difusión de resultados hasta al menos las 20:15 ET; un tribunal del condado de Chester, en Pensilvania, ordenó extender hasta las 20:30 ET en tres mesas; una amenaza de bomba obligó a evacuar un centro de votación en Toledo, Ohio.
+
+**Sin resultados ni boca de urna.** Las urnas seguían abiertas en todos los estados. CNN reemplazó sus encuestas a boca de urna por el CNN Voter Poll y retiene los datos que caracterizan cada carrera hasta el cierre.
+
+### Criterios aplicados en esta corrida
+
+El acumulado anual del S&P quedó fuera: la única fuente disponible lo calcula sobre el ETF SPY como aproximación, no sobre el índice, y corta al lunes.
+
+Del bloque de incidencias se retiraron los hechos provenientes de un agregador sin confirmación primaria independiente. Quedaron los tres con fuente propia más los ya verificados por la mañana.
+
+La divergencia del voto anticipado entre 57 y 54 millones quedó explicada: son rastreadores de cobertura distinta, no cifras en conflicto. El tablero usa la de University of Florida Election Lab, de cobertura más amplia.

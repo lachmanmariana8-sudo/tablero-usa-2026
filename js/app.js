@@ -7,9 +7,16 @@ if(J && J.markets) J.markets.forEach(nu=>{
   const i = M.indicators.findIndex(x=>x.id===nu.id);
   if(i>=0) M.indicators[i] = nu; else M.indicators.push(nu);
 });
-/* El dato intradía del S&P reemplaza al acumulado anual, que no tiene lectura verificada de hoy. */
+/* El dato del S&P del día reemplaza al acumulado anual, sin lectura verificada del índice. */
 if(M.indicators.some(x=>x.id==="sp500_intraday"))
   M.indicators = M.indicators.filter(x=>x.id!=="sp500_ytd");
+/* Primero la rueda de hoy, después el telón de fondo macroeconómico. */
+const ORDEN_IND = ["sp500_intraday","dow_close","nasdaq_close","ust10y","dxy_dollar","wti_oil",
+                   "fed_funds","cpi_yoy","unemployment","gdp_q3_2026","tariff_policy","fiscal_deficit"];
+M.indicators.sort((a,b)=>{
+  const ia = ORDEN_IND.indexOf(a.id), ib = ORDEN_IND.indexOf(b.id);
+  return (ia<0?99:ia) - (ib<0?99:ib);
+});
 const RATINGS = ["safe-d","likely-d","lean-d","tossup","lean-r","likely-r","safe-r"];
 const COLORS = {"safe-d":"#124a85","likely-d":"#4480c4","lean-d":"#a7c8ec","tossup":"#f0c525","lean-r":"#ef9d9d","likely-r":"#d2574a","safe-r":"#8e1f1c"};
 const DARK_FILLS = new Set(["safe-d","likely-d","likely-r","safe-r"]);
@@ -26,8 +33,8 @@ es:{
   jornadaTitle:"El pulso de la jornada",
   jornada:{
     earlyVote:"Voto anticipado", earlyVoteD:"Récord absoluto para una elección de medio término; en 2022 fueron 45,9 millones.",
-    mktHouse:"Cámara demócrata · mercados", mktHouseD:"Mejor precio entre Kalshi y Polymarket al mediodía del día de la elección.",
-    mktSenate:"Senado demócrata · mercados", mktSenateD:"Los modelos basados en encuestas llegan al 80 %: siete puntos por encima de los mercados.",
+    mktHouse:"Cámara demócrata · mercados", mktHouseD:"Precio de cierre de la rueda; cedió desde el 94 % del mediodía.",
+    mktSenate:"Senado demócrata · mercados", mktSenateD:"Cedió desde el 77 % del mediodía; los modelos de encuestas llegan al 80 %.",
     closing:"Primeros cierres", closingD:"Indiana y Kentucky abren el conteo; Alaska cierra a la 1:00 ET del 4 de noviembre.",
     incTitle:"Incidencias de la jornada"
   },
@@ -92,8 +99,8 @@ en:{
   jornadaTitle:"Election-day pulse",
   jornada:{
     earlyVote:"Early vote", earlyVoteD:"An all-time midterm record; 2022 saw 45.9 million.",
-    mktHouse:"Democratic House · markets", mktHouseD:"Best price across Kalshi and Polymarket at midday on Election Day.",
-    mktSenate:"Democratic Senate · markets", mktSenateD:"Poll-based models reach 80%: seven points above the markets.",
+    mktHouse:"Democratic House · markets", mktHouseD:"Price at the market close; down from 94% at midday.",
+    mktSenate:"Democratic Senate · markets", mktSenateD:"Down from 77% at midday; poll-based models reach 80%.",
     closing:"First poll closings", closingD:"Indiana and Kentucky open the count; Alaska closes at 1:00 am ET on November 4.",
     incTitle:"Election-day incidents"
   },
@@ -231,19 +238,19 @@ function renderSummary(){
 function renderJornada(){
   if(!J) return;
   const j = t().jornada, pm = J.prediction_markets.multi_platform_best_price, ev = earlyVote();
-  const pmTime = lang==="es" ? "3-nov · 12:37 ET" : "Nov 3 · 12:37 pm ET";
+  const pmSrc = lang==="es" ? pm.source_label_es : pm.source_label_en;
   $("#jornadaStrip").innerHTML = `
     <div class="stat stat-live">
       <div class="k">${j.earlyVote}</div><div class="v">${ev.v}</div>
       <div class="d">${j.earlyVoteD}</div><div class="src">${ev.src} · ${ev.cut}</div>
     </div>
     <div class="stat stat-live">
-      <div class="k">${j.mktHouse}</div><div class="v">${pm.house_dem} %</div>
-      <div class="d">${j.mktHouseD}</div><div class="src">Kalshi · Polymarket · ${pmTime}</div>
+      <div class="k">${j.mktHouse}</div><div class="v">${fmtNum(pm.house_dem)} %</div>
+      <div class="d">${j.mktHouseD}</div><div class="src">${pmSrc}</div>
     </div>
     <div class="stat stat-live">
-      <div class="k">${j.mktSenate}</div><div class="v">${pm.senate_dem} %</div>
-      <div class="d">${j.mktSenateD}</div><div class="src">Kalshi · Polymarket · ${pmTime}</div>
+      <div class="k">${j.mktSenate}</div><div class="v">${fmtNum(pm.senate_dem)} %</div>
+      <div class="d">${j.mktSenateD}</div><div class="src">${pmSrc}</div>
     </div>
     <div class="stat stat-live">
       <div class="k">${j.closing}</div><div class="v">18:00 ET</div>
