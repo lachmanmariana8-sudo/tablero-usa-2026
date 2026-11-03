@@ -31,7 +31,7 @@ es:{
   tabResults:"Resultados", tabMap:"Mapa nacional", tabCongress:"Congreso y escenarios", tabEconomy:"Economía", tabLatam:"América Latina",
   boards:{senate:"Senado",governors:"Gobernaciones",house:"Cámara"},
   results:{
-    title:"Resultados", updated:"Actualizado", autoEvery:"se actualiza solo cada 2 min", refreshNow:"Actualizar ahora",
+    title:"Resultados", refreshNow:"Actualizar ahora",
     senateK:"Senado · bancas llamadas", houseK:"Cámara · distritos clave llamados", govK:"Gobernaciones · llamadas",
     nextClose:"Próximo cierre de urnas", statusTitle:"Estado de la jornada",
     watchTitle:"Carreras para seguir", watchSub:"Los toss-ups de consenso, con el resultado en vivo a medida que se cuenta.",
@@ -107,7 +107,7 @@ en:{
   tabResults:"Results", tabMap:"National map", tabCongress:"Congress & scenarios", tabEconomy:"Economy", tabLatam:"Latin America",
   boards:{senate:"Senate",governors:"Governors",house:"House"},
   results:{
-    title:"Results", updated:"Updated", autoEvery:"auto-updates every 2 min", refreshNow:"Refresh now",
+    title:"Results", refreshNow:"Refresh now",
     senateK:"Senate · seats called", houseK:"House · key districts called", govK:"Governorships · called",
     nextClose:"Next poll closing", statusTitle:"Status of the night",
     watchTitle:"Races to watch", watchSub:"Consensus toss-ups, with live results as the count comes in.",
@@ -473,12 +473,6 @@ function nextClosing(){
   const now = Date.now();
   return entries.find(e=>e.time.getTime() > now - 60000) || null;
 }
-function relTime(iso){
-  if(!iso) return "";
-  const diffSec = Math.max(0, Math.round((Date.now()-new Date(iso).getTime())/1000));
-  if(diffSec<60) return lang==="es"?`hace ${diffSec}s`:`${diffSec}s ago`;
-  return lang==="es"?`hace ${Math.round(diffSec/60)} min`:`${Math.round(diffSec/60)} min ago`;
-}
 function renderResultados(){
   const RES = window.DATA_RESULTADOS, rt = t().results;
   if(!RES){ $("#sec-resultados").innerHTML=""; return; }
@@ -487,7 +481,7 @@ function renderResultados(){
   $("#sec-resultados").innerHTML = `
   <div class="results-toolbar">
     <h2 class="sec-title" style="margin:0">${rt.title}</h2>
-    <div class="results-updated"><span class="dot"></span>${rt.updated} <span id="resultsAgo">${relTime(RES.metadata.generated)}</span> · ${rt.autoEvery}
+    <div class="results-updated">
       <button type="button" class="btn-refresh" id="resultsRefreshBtn">${rt.refreshNow}</button>
     </div>
   </div>
@@ -529,12 +523,8 @@ function loadResultsData(cb){
   s.onerror = ()=>{ if(prev) prev.remove(); };
   document.body.appendChild(s);
 }
+/* Auto-refresh silencioso de resultados cada 2 min — sin indicarlo en la UI. */
 setInterval(()=>loadResultsData(renderResultados), 120000);
-/* El "hace Xs" se refresca más seguido que el dato en sí, para que la pantalla se sienta viva entre corridas. */
-setInterval(()=>{
-  const el = document.getElementById("resultsAgo");
-  if(el && window.DATA_RESULTADOS) el.textContent = relTime(window.DATA_RESULTADOS.metadata.generated);
-}, 15000);
 
 /* ---------- congress ---------- */
 function senateProjection(){
