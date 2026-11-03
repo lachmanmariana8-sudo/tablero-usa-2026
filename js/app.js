@@ -151,7 +151,7 @@ en:{
     "The Senate is the deeper fight: Democrats need a net +4 to reach 51 on an adverse map (defending 13 seats against 22 Republican ones); the keys are Maine, Ohio, Texas, Iowa, Kansas, Alaska and North Carolina, and control decides judicial confirmations, including the Supreme Court (Polymarket ~76% Democratic).",
     "Cost of living dominates: it is voters' top concern and Trump's weakest flank — his approval (38% in the Silver Bulletin average, near its low) turns the election into a midterm referendum with parallels to the 2018 wave.",
     "Mid-decade redistricting driven by Republican southern states (new seats like FL-22 and TX-35 among the toss-ups) could blunt the size of Democratic House gains.",
-    "Record turnout: over 48.5 million early votes (a midterm record), with key governorships in Georgia, Ohio, Nevada, Wisconsin and Alaska shaping the state map toward 2028; in Georgia, races without an absolute majority go to a Dec 1 runoff."
+    "Record turnout: over 57 million early votes (a midterm record), with key governorships in Georgia, Ohio, Nevada, Wisconsin and Alaska shaping the state map toward 2028; in Georgia, races without an absolute majority go to a Dec 1 runoff."
   ]
 }
 };
@@ -230,12 +230,12 @@ function renderSummary(){
 /* Pulso de la jornada: cifras ancla del día, con su hora. */
 function renderJornada(){
   if(!J) return;
-  const j = t().jornada, pm = J.prediction_markets.multi_platform_best_price;
+  const j = t().jornada, pm = J.prediction_markets.multi_platform_best_price, ev = earlyVote();
   const pmTime = lang==="es" ? "3-nov · 12:37 ET" : "Nov 3 · 12:37 pm ET";
   $("#jornadaStrip").innerHTML = `
     <div class="stat stat-live">
-      <div class="k">${j.earlyVote}</div><div class="v">+57 M</div>
-      <div class="d">${j.earlyVoteD}</div><div class="src">University of Florida Election Lab · ABC News</div>
+      <div class="k">${j.earlyVote}</div><div class="v">${ev.v}</div>
+      <div class="d">${j.earlyVoteD}</div><div class="src">${ev.src} · ${ev.cut}</div>
     </div>
     <div class="stat stat-live">
       <div class="k">${j.mktHouse}</div><div class="v">${pm.house_dem} %</div>
@@ -417,7 +417,7 @@ function hemicycleSVG(segments, total, majorityLabel, leftLabel, rightLabel, cen
 }
 
 function renderCongress(){
-  const c = t().congress, p = senateProjection(), gb = E.house.generic_ballot, ctx = E.context;
+  const c = t().congress, p = senateProjection(), gb = E.house.generic_ballot, ctx = E.context, ev = earlyVote();
   const closest = E.senate.races.filter(r=>r.last_poll && ["tossup","lean-d","lean-r"].includes(r.rating))
     .sort((a,b)=>{
       // Un empate es el margen más cerrado: se ordena por el valor con signo, no por el texto.
@@ -456,9 +456,9 @@ function renderCongress(){
     ], E.house.current_composition.total, c.houseMajority, `D ${E.house.current_composition.democrats}`, `R ${E.house.current_composition.republicans}`, "")}
     <p class="sec-sub" style="margin-top:8px">${c.houseBarNote}</p>
     <div class="card-row">
-      <div class="stat"><div class="k">${c.gb}</div><div class="v">${gb.average.replace("D +","D+")}</div><div class="d">${gb.aggregators.map(a=>`${a.name}: ${a.value}`).join(" · ")}</div><div class="src">${gb.as_of}</div></div>
+      <div class="stat"><div class="k">${c.gb}</div><div class="v">${dec(gb.average.replace("D +","D+"))}</div><div class="d">${gb.aggregators.map(a=>`${a.name}: ${dec(a.value)}`).join(" · ")}</div><div class="src">${gb.as_of}</div></div>
       <div class="stat"><div class="k">${c.approval}</div><div class="v">${ctx.presidential_approval.aggregator_figure.approve}%</div><div class="d">${lang==="es"?"aprueba":"approve"} · ${ctx.presidential_approval.aggregator_figure.disapprove}% ${lang==="es"?"desaprueba":"disapprove"} (${ctx.presidential_approval.aggregator_figure.source})</div><div class="src">${ctx.presidential_approval.aggregator_figure.as_of}</div></div>
-      <div class="stat"><div class="k">${c.earlyVote}</div><div class="v">${(ctx.early_vote.total_ballots/1e6).toFixed(1).replace(".",lang==="es"?",":".")} M</div><div class="d">${lang==="es"?"votos anticipados al 30-oct (2022: 45,9 M)":"early votes by Oct 30 (2022: 45.9M)"}</div><div class="src">${ctx.early_vote.source.split("(")[0]}</div></div>
+      <div class="stat"><div class="k">${c.earlyVote}</div><div class="v">${ev.v}</div><div class="d">${lang==="es"?`votos anticipados ${ev.cut} (2022: 45,9 M)`:`early votes ${ev.cut} (2022: 45.9M)`}</div><div class="src">${ev.src}</div></div>
     </div>
   </div>
   <h2 class="sec-title">${c.closest}</h2><p class="sec-sub">${c.closestSub}</p>
@@ -560,6 +560,25 @@ function marginBars(races){
   }).join("");
   return `<div class="chart-wrap"><svg class="rangechart" viewBox="0 0 ${W} ${H}" role="img">${ticks}
     <line x1="${x(0)}" y1="${top-10}" x2="${x(0)}" y2="${H-bot+4}" stroke="var(--ink)" stroke-width="1.5"/>${rows}</svg></div>`;
+}
+
+/* Separador decimal del idioma en cadenas de una sola cifra decimal (no toca miles). */
+function dec(s){ return lang==="es" ? String(s).replace(/(\d)\.(\d)(?!\d)/g, "$1,$2") : String(s); }
+
+/* Voto anticipado: una sola fuente para todo el tablero, para que no haya dos cifras distintas. */
+function earlyVote(){
+  const j = J && J.jornada && J.jornada.early_vote;
+  if(j && j.total_ballots) return {
+    v:`+${Math.floor(j.total_ballots/1e6)} M`,
+    cut: lang==="es" ? "al 2 de noviembre" : "as of November 2",
+    src:"University of Florida Election Lab · ABC News"
+  };
+  const e = E.context.early_vote;
+  return {
+    v:`${(e.total_ballots/1e6).toFixed(1).replace(".", lang==="es"?",":".")} M`,
+    cut: lang==="es" ? "al 30 de octubre" : "as of October 30",
+    src:"University of Florida Election Lab"
+  };
 }
 
 /* Los gráficos cambian de disposición al cruzar este ancho. */

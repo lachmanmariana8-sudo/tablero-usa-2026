@@ -21,3 +21,7 @@ Lenguaje gráfico al nivel de referencia: banda de estado superior, cabecera con
 - Resultados oficiales a medida que se publiquen (primeros cierres 18:00 ET).
 - Participación final de la jornada, sin cifra verificada al cierre de esta corrida.
 - Composición de la Cámara: persiste la divergencia 220-215 vs 222-213 entre fuentes.
+
+## Corrección de coherencia (16:30)
+
+El voto anticipado aparecía con dos valores: 57 millones en el pulso de la jornada y 48,5 millones en Congreso, porque cada sección leía un dataset distinto. Ahora ambas tarjetas y la clave de la elección se sirven de una única función, con la cifra del 2 de noviembre de University of Florida Election Lab. También se corrigió el separador decimal de la boleta genérica, que en castellano mostraba punto.
