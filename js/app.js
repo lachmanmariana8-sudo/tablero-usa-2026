@@ -1,7 +1,15 @@
 /* Tablero Democrac.IA — Elecciones de medio término EE.UU. 2026 */
 (function(){
 "use strict";
-const E = window.DATA_ELECTORAL, M = window.DATA_ECONOMIA, MAP = window.US_MAP;
+const E = window.DATA_ELECTORAL, M = window.DATA_ECONOMIA, MAP = window.US_MAP, J = window.DATA_JORNADA;
+/* Los indicadores de mercado de la tarde reemplazan la lectura de la mañana del mismo id. */
+if(J && J.markets) J.markets.forEach(nu=>{
+  const i = M.indicators.findIndex(x=>x.id===nu.id);
+  if(i>=0) M.indicators[i] = nu; else M.indicators.push(nu);
+});
+/* El dato intradía del S&P reemplaza al acumulado anual, que no tiene lectura verificada de hoy. */
+if(M.indicators.some(x=>x.id==="sp500_intraday"))
+  M.indicators = M.indicators.filter(x=>x.id!=="sp500_ytd");
 const RATINGS = ["safe-d","likely-d","lean-d","tossup","lean-r","likely-r","safe-r"];
 const COLORS = {"safe-d":"#124a85","likely-d":"#4480c4","lean-d":"#a7c8ec","tossup":"#f0c525","lean-r":"#ef9d9d","likely-r":"#d2574a","safe-r":"#8e1f1c"};
 const DARK_FILLS = new Set(["safe-d","likely-d","likely-r","safe-r"]);
@@ -12,45 +20,54 @@ es:{
   brandSub:"Tablero electoral · EE.UU. 2026",
   livePill:"Día de la elección · mar 3 nov 2026",
   heroTitle:"Elecciones de medio término · Estados Unidos 2026",
-  heroSub:"35 bancas del Senado, las 435 de la Cámara de Representantes y 36 gobernaciones. Mapa estado por estado, escenarios de control del Congreso, variables económicas e impacto para América Latina. Todos los datos provienen de fuentes citadas; donde no hay dato verificado, se dice.",
+  heroSub:"35 bancas del Senado, las 435 de la Cámara de Representantes y 36 gobernaciones. Mapa estado por estado, escenarios de control del Congreso, variables económicas e impacto para América Latina.",
   tabMap:"Mapa nacional", tabCongress:"Congreso y escenarios", tabEconomy:"Economía", tabLatam:"América Latina", tabSources:"Fuentes y metodología",
   boards:{senate:"Senado",governors:"Gobernaciones",house:"Cámara"},
-  mapHint:"Pasá el mouse por un estado; hacé clic para el detalle completo.",
+  jornadaTitle:"El pulso de la jornada",
+  jornada:{
+    earlyVote:"Voto anticipado", earlyVoteD:"Récord absoluto para una elección de medio término; en 2022 fueron 45,9 millones.",
+    mktHouse:"Cámara demócrata · mercados", mktHouseD:"Mejor precio entre Kalshi y Polymarket al mediodía del día de la elección.",
+    mktSenate:"Senado demócrata · mercados", mktSenateD:"Los modelos basados en encuestas llegan al 80 %: siete puntos por encima de los mercados.",
+    closing:"Primeros cierres", closingD:"Indiana y Kentucky abren el conteo; Alaska cierra a la 1:00 ET del 4 de noviembre.",
+    incTitle:"Incidencias de la jornada"
+  },
+  mapHint:"",
   ratings:{"safe-d":"Seguro D","likely-d":"Probable D","lean-d":"Inclinado D","tossup":"Toss-up","lean-r":"Inclinado R","likely-r":"Probable R","safe-r":"Seguro R"},
   noRace:"Sin elección de Senado en 2026", noRaceGov:"Sin elección de gobernador en 2026",
   lastPoll:"Última encuesta", incumbent:"Titular", defends:"defiende", openSeat:"banca abierta",
   summary:{
-    senateK:"Senado · composición actual", senateV:"53 R — 47 D*", senateD:"35 bancas en juego: los republicanos defienden 22 y los demócratas 13. Los demócratas necesitan +4 netas para llegar a 51. *Incluye 2 independientes que votan con los demócratas.",
-    houseK:"Cámara · composición actual", houseV:"220 R — 215 D", houseD:"Mayoría: 218. A los demócratas les bastan +3 bancas netas. Promedio final de boleta genérica: D +8,6 (mediana de 5 agregadores, 1-nov).",
+    senateK:"Senado · composición actual", senateV:"53 R — 47 D*", senateD:"Los republicanos defienden 22 de las 35 bancas en juego; los demócratas, 13 — y necesitan 4 más para llegar a 51. *Incluye 2 independientes que votan con los demócratas.",
+    houseK:"Cámara · composición actual", houseV:"220 R — 215 D", houseD:"Mayoría: 218. A los demócratas les bastan 3 bancas netas. Boleta genérica final: D +8,6.",
     govK:"Gobernaciones en juego", govV:"36",
-    ratingNote:"Rating de consenso: mediana de Cook Political Report, Inside Elections y Sabato's Crystal Ball (3-nov-2026); la categoría «tilt» se asimila a «inclinado», con nota en cada carrera."
+    ratingNote:""
   },
   houseMapNote:"La Cámara se elige por distrito, no por estado. Los círculos marcan cuántos de los distritos toss-up del consenso hay en cada estado; el detalle está debajo del mapa.",
   houseKeyTitle:"Distritos toss-up de la Cámara", houseKeySub:"Consenso de calificadores (13 toss-ups) más los que ABC News agrega a su lista (14).",
   congress:{
     title:"Congreso y escenarios de control",
     senBarTitle:"Senado — si los ratings de consenso se cumplen",
-    senBarNote:"Un punto por banca: las que no se eligen en 2026 más las 35 en juego asignadas según el rating de consenso. Los toss-ups quedan sin asignar: son los que definen el control.",
+    senBarNote:"Los anillos son bancas que no se eligen en 2026; las 35 en juego llevan el color de su rating de consenso. Los cuatro toss-ups definen el control.",
     notUpD:"D sin elección", notUpR:"R sin elección",
     senMajority:"51 para el control", houseMajority:"218 para la mayoría",
-    coherence:(nd,dr,toss,rr,nr)=>`Aritmética: ${nd} (D sin elección) + ${dr} (rating D) + ${toss} (toss-up) + ${rr} (rating R) + ${nr} (R sin elección) = ${nd+dr+toss+rr+nr} bancas.`,
+    coherence:()=>"",
     houseBarTitle:"Cámara — composición actual y umbral de mayoría",
-    houseBarNote:"No hay proyección banca por banca de las 435: el consenso identifica 13 toss-ups y una ventaja demócrata de +8,6 en la boleta genérica.",
-    closest:"Las carreras más cerradas del Senado", closestSub:"Ordenadas por el margen de la última encuesta disponible; el rating es el de consenso.",
-    scenTitle:"Escenarios de control", scenSub:"Probabilidades asignadas por la mesa de JPMorgan (3-nov-2026); las implicancias completas, con fuentes, están en la sección Economía.",
-    keysTitle:"Las claves de la elección", keysSub:"Según la cobertura y los agregadores citados en Fuentes.",
+    houseBarNote:"La mayoría exige 218 bancas. El consenso identifica 13 distritos toss-up, con boleta genérica D +8,6.",
+    closest:"Las carreras más cerradas del Senado", closestSub:"",
+    scenTitle:"Escenarios de control", scenSub:"Probabilidades de la mesa de JPMorgan (3-nov-2026). El detalle económico de cada escenario está en la sección Economía.",
+    keysTitle:"Las claves de la elección", keysSub:"",
     gb:"Boleta genérica (promedio final)", tossups:"toss-ups", approval:"Aprobación presidencial", earlyVote:"Voto anticipado (récord)"
   },
   economy:{
     title:"Economía: punto de partida y escenarios",
-    indTitle:"Variables al día de la elección", indSub:"Último dato verificado de cada indicador, con su fecha y fuente. Donde no hay dato verificable reciente, se consigna sin aproximar.",
-    scenTitle:"Qué cambia según el resultado", scenSub:"Síntesis de análisis de terceros citados (JPMorgan AM, National Bank Financial, Capital.com, Charles Schwab, Morgan Stanley, CEPA, Orlando Ferreres, entre otros). Cada afirmación conserva su atribución.",
+    indTitle:"Variables al día de la elección", indSub:"",
+    scenTitle:"Qué cambia según el resultado", scenSub:"Análisis de JPMorgan Asset Management, National Bank Financial, Capital.com, Morgan Stanley, Charles Schwab, CEPA y Orlando Ferreres, con atribución en cada punto.",
     fields:{fiscal:"Política fiscal",trade:"Comercio y aranceles",fed_rates:"Fed y tasas",markets:"Mercados",regulation:"Regulación y supervisión"},
     nd:"sin dato verificado"
   },
   latam:{
     title:"Impacto para América Latina",
-    matrixTitle:"Matriz país × canal de impacto", matrixSub:"El punto indica que hay análisis citado para ese canal; el color, el nivel de exposición del país. Clic en una fila para el detalle.",
+    matrixTitle:"Matriz país × canal de impacto", matrixSub:"El color marca el nivel de exposición de cada país.",
+    anchorsTitle:"Anclas de la región",
     country:"País / bloque", exposure:"Exposición",
     exp:{"alta":"Alta","media":"Media","media-baja":"Media-baja"},
     scen:{dem_sweep:"Demócratas ambas cámaras",divided:"Congreso dividido",gop_hold:"Republicanos retienen"},
@@ -62,53 +79,62 @@ es:{
     methodText:"Corrida del 3 de noviembre de 2026 (día de la elección, antes del cierre de urnas). Dos líneas de investigación independientes —electoral y económica/regional— relevaron fuentes primarias y de prensa el mismo día; cada cifra, rating y afirmación de escenario conserva su fuente. Regla editorial: el dato entra con fuente verificada o se consigna su ausencia; las proyecciones son siempre de terceros citados, nunca propias. El rating por carrera es la mediana de Cook Political Report, Inside Elections y Sabato's Crystal Ball. Próximas corridas incorporarán resultados oficiales a medida que se publiquen.",
     electoral:"Fuentes electorales", economic:"Fuentes económicas y regionales", accessed:"consultado"
   },
-  footerLine:"tablero de monitoreo electoral · corrida del 3-nov-2026",
-  footerNote:"Elaborado con flujos de agentes de investigación con fuentes citadas. Este tablero acerca elementos de análisis; no formula pronósticos propios.",
+  footerLine:"tablero de monitoreo electoral · 3 de noviembre de 2026",
+  footerNote:"Elementos de análisis sobre fuentes citadas; las proyecciones pertenecen siempre a los terceros que se citan.",
   keys_en:null
 },
 en:{
   brandSub:"Election dashboard · US 2026",
   livePill:"Election Day · Tue Nov 3, 2026",
   heroTitle:"United States 2026 Midterm Elections",
-  heroSub:"35 Senate seats, all 435 House seats and 36 governorships. A state-by-state map, congressional control scenarios, economic variables and the impact on Latin America. Every figure is sourced; where no verified data exists, we say so.",
+  heroSub:"35 Senate seats, all 435 House seats and 36 governorships. A state-by-state map, congressional control scenarios, economic variables and the impact on Latin America.",
   tabMap:"National map", tabCongress:"Congress & scenarios", tabEconomy:"Economy", tabLatam:"Latin America", tabSources:"Sources & methodology",
   boards:{senate:"Senate",governors:"Governors",house:"House"},
-  mapHint:"Hover over a state; click for the full rundown.",
+  jornadaTitle:"Election-day pulse",
+  jornada:{
+    earlyVote:"Early vote", earlyVoteD:"An all-time midterm record; 2022 saw 45.9 million.",
+    mktHouse:"Democratic House · markets", mktHouseD:"Best price across Kalshi and Polymarket at midday on Election Day.",
+    mktSenate:"Democratic Senate · markets", mktSenateD:"Poll-based models reach 80%: seven points above the markets.",
+    closing:"First poll closings", closingD:"Indiana and Kentucky open the count; Alaska closes at 1:00 am ET on November 4.",
+    incTitle:"Election-day incidents"
+  },
+  mapHint:"",
   ratings:{"safe-d":"Safe D","likely-d":"Likely D","lean-d":"Lean D","tossup":"Toss-up","lean-r":"Lean R","likely-r":"Likely R","safe-r":"Safe R"},
   noRace:"No Senate race in 2026", noRaceGov:"No governor race in 2026",
   lastPoll:"Latest poll", incumbent:"Incumbent", defends:"defends", openSeat:"open seat",
   summary:{
-    senateK:"Senate · current composition", senateV:"53 R — 47 D*", senateD:"35 seats up: Republicans defend 22, Democrats 13. Democrats need a net +4 for 51. *Includes 2 independents who caucus with Democrats.",
-    houseK:"House · current composition", houseV:"220 R — 215 D", houseD:"Majority: 218. Democrats need a net +3. Final generic-ballot average: D +8.6 (median of 5 aggregators, Nov 1).",
+    senateK:"Senate · current composition", senateV:"53 R — 47 D*", senateD:"Republicans defend 22 of the 35 seats up; Democrats, 13 — and need 4 more for 51. *Includes 2 independents who caucus with Democrats.",
+    houseK:"House · current composition", houseV:"220 R — 215 D", houseD:"Majority: 218. Democrats need a net 3 seats. Final generic ballot: D +8.6.",
     govK:"Governorships up", govV:"36",
-    ratingNote:"Consensus rating: median of Cook Political Report, Inside Elections and Sabato's Crystal Ball (Nov 3, 2026); 'tilt' is folded into 'lean', noted per race."
+    ratingNote:""
   },
   houseMapNote:"The House is elected by district, not by state. Circles show how many consensus toss-up districts each state holds; details are below the map.",
   houseKeyTitle:"House toss-up districts", houseKeySub:"Rater consensus (13 toss-ups) plus the races ABC News adds to its list (14).",
   congress:{
     title:"Congress and control scenarios",
     senBarTitle:"Senate — if consensus ratings hold",
-    senBarNote:"One dot per seat: those not up in 2026 plus the 35 contested seats assigned by consensus rating. Toss-ups stay unassigned: they decide control.",
+    senBarNote:"Rings are seats not up in 2026; the 35 contested seats carry their consensus rating. The four toss-ups decide control.",
     notUpD:"D not up", notUpR:"R not up",
     senMajority:"51 for control", houseMajority:"218 for a majority",
-    coherence:(nd,dr,toss,rr,nr)=>`Arithmetic: ${nd} (D not up) + ${dr} (D-rated) + ${toss} (toss-up) + ${rr} (R-rated) + ${nr} (R not up) = ${nd+dr+toss+rr+nr} seats.`,
+    coherence:()=>"",
     houseBarTitle:"House — current composition and majority threshold",
-    houseBarNote:"No seat-by-seat projection of all 435: the consensus flags 13 toss-ups and a D +8.6 generic-ballot lead.",
-    closest:"The closest Senate races", closestSub:"Sorted by latest available poll margin; the rating is the consensus one.",
-    scenTitle:"Control scenarios", scenSub:"Probabilities from JPMorgan's trading desk (Nov 3, 2026); full implications, with sources, in the Economy section.",
-    keysTitle:"What this election decides", keysSub:"Per the coverage and aggregators cited under Sources.",
+    houseBarNote:"A majority takes 218 seats. The consensus flags 13 toss-up districts, with a D +8.6 generic ballot.",
+    closest:"The closest Senate races", closestSub:"",
+    scenTitle:"Control scenarios", scenSub:"Probabilities from JPMorgan's trading desk (Nov 3, 2026). The economic detail of each scenario is in the Economy section.",
+    keysTitle:"What this election decides", keysSub:"",
     gb:"Generic ballot (final average)", tossups:"toss-ups", approval:"Presidential approval", earlyVote:"Early vote (record)"
   },
   economy:{
     title:"Economy: starting point and scenarios",
-    indTitle:"Where things stand on Election Day", indSub:"Latest verified reading for each indicator, with date and source. Where no recent verifiable figure exists, it is reported as missing rather than approximated.",
-    scenTitle:"What changes with each outcome", scenSub:"A synthesis of third-party analysis (JPMorgan AM, National Bank Financial, Capital.com, Charles Schwab, Morgan Stanley, CEPA, Orlando Ferreres, among others). Every claim keeps its attribution.",
+    indTitle:"Where things stand on Election Day", indSub:"",
+    scenTitle:"What changes with each outcome", scenSub:"Analysis from JPMorgan Asset Management, National Bank Financial, Capital.com, Morgan Stanley, Charles Schwab, CEPA and Orlando Ferreres, attributed point by point.",
     fields:{fiscal:"Fiscal policy",trade:"Trade & tariffs",fed_rates:"Fed & rates",markets:"Markets",regulation:"Regulation & oversight"},
     nd:"no verified figure"
   },
   latam:{
     title:"Impact on Latin America",
-    matrixTitle:"Country × impact-channel matrix", matrixSub:"A dot means cited analysis exists for that channel; its color shows the country's exposure level. Click a row for details.",
+    matrixTitle:"Country × impact-channel matrix", matrixSub:"Color marks each country's exposure level.",
+    anchorsTitle:"Regional anchors",
     country:"Country / bloc", exposure:"Exposure",
     exp:{"alta":"High","media":"Medium","media-baja":"Medium-low"},
     scen:{dem_sweep:"Democrats both chambers",divided:"Divided Congress",gop_hold:"Republicans hold"},
@@ -120,8 +146,8 @@ en:{
     methodText:"Run of November 3, 2026 (Election Day, before polls closed). Two independent research tracks — electoral and economic/regional — surveyed primary and press sources the same day; every figure, rating and scenario claim keeps its source. Editorial rule: a figure enters with a verified source or its absence is stated; projections are always attributed to cited third parties, never our own. Per-race ratings are the median of Cook Political Report, Inside Elections and Sabato's Crystal Ball. Future runs will fold in official results as they are published.",
     electoral:"Electoral sources", economic:"Economic & regional sources", accessed:"accessed"
   },
-  footerLine:"election monitoring dashboard · Nov 3, 2026 run",
-  footerNote:"Built with research-agent workflows on cited sources. This dashboard offers elements of analysis; it makes no forecasts of its own.",
+  footerLine:"election monitoring dashboard · November 3, 2026",
+  footerNote:"Elements of analysis on cited sources; every projection belongs to the third party quoted.",
   keys_en:[
     "House control: Democrats need just 3 net seats (215→218) to block Trump's legislative agenda, open investigations and enable a potential impeachment; aggregators and markets make them clear favorites (generic ballot D+8.6; Polymarket ~94% for the House).",
     "The Senate is the deeper fight: Democrats need a net +4 to reach 51 on an adverse map (defending 13 seats against 22 Republican ones); the keys are Maine, Ohio, Texas, Iowa, Kansas, Alaska and North Carolina, and control decides judicial confirmations, including the Supreme Court (Polymarket ~76% Democratic).",
@@ -193,6 +219,32 @@ function renderSummary(){
     <div class="stat"><div class="k">${s.senateK}</div><div class="v">${s.senateV}</div><div class="d">${s.senateD}</div></div>
     <div class="stat"><div class="k">${s.houseK}</div><div class="v">${s.houseV}</div><div class="d">${s.houseD}</div></div>
     <div class="stat"><div class="k">${s.govK}</div><div class="v">${s.govV}</div><div class="d">${lang==="es"?`${tossG} toss-ups en gobernaciones y ${tossS} en el Senado.`:`${tossG} governor toss-ups and ${tossS} in the Senate.`} ${s.ratingNote}</div></div>`;
+  renderJornada();
+}
+
+/* Pulso de la jornada: cifras ancla del día, con su hora. */
+function renderJornada(){
+  if(!J) return;
+  const j = t().jornada, pm = J.prediction_markets.multi_platform_best_price;
+  const pmTime = lang==="es" ? "3-nov · 12:37 ET" : "Nov 3 · 12:37 pm ET";
+  $("#jornadaStrip").innerHTML = `
+    <div class="stat stat-live">
+      <div class="k">${j.earlyVote}</div><div class="v">+57 M</div>
+      <div class="d">${j.earlyVoteD}</div><div class="src">University of Florida Election Lab · ABC News</div>
+    </div>
+    <div class="stat stat-live">
+      <div class="k">${j.mktHouse}</div><div class="v">${pm.house_dem} %</div>
+      <div class="d">${j.mktHouseD}</div><div class="src">Kalshi · Polymarket · ${pmTime}</div>
+    </div>
+    <div class="stat stat-live">
+      <div class="k">${j.mktSenate}</div><div class="v">${pm.senate_dem} %</div>
+      <div class="d">${j.mktSenateD}</div><div class="src">Kalshi · Polymarket · ${pmTime}</div>
+    </div>
+    <div class="stat stat-live">
+      <div class="k">${j.closing}</div><div class="v">18:00 ET</div>
+      <div class="d">${j.closingD}</div><div class="src">Fox News live blog · 3-nov-2026</div>
+    </div>`;
+  $("#jornadaNote").innerHTML = `<div class="card card-incident"><div class="inc-k">${j.incTitle}</div><p>${lang==="es"?J.jornada.incidents_es:J.jornada.incidents_en}</p></div>`;
 }
 
 function buildMapOnce(){
@@ -241,14 +293,15 @@ function paintBoard(){
     const p = $("#st-"+st.id); let r = null;
     if(board==="senate") r = senByState[st.id] && senByState[st.id].rating;
     else if(board==="governors") r = govByState[st.id] && govByState[st.id].rating;
-    if(board!=="house" && r){ p.setAttribute("fill", COLORS[r]); p.classList.remove("no-race"); counts[r]++; }
-    else { p.setAttribute("fill", "var(--neutral-state)"); if(board!=="house") p.classList.add("no-race"); else p.classList.remove("no-race"); }
+    if(board!=="house" && r){ p.setAttribute("fill", COLORS[r]); p.classList.remove("no-race"); p.classList.toggle("is-toss", r==="tossup"); counts[r]++; }
+    else { p.setAttribute("fill", "var(--neutral-state)"); p.classList.remove("is-toss"); if(board!=="house") p.classList.add("no-race"); else p.classList.remove("no-race"); }
   });
   // labels contrast
   document.querySelectorAll("#usMap text.st-label").forEach(el=>{
     const id = el.textContent;
     const r = board==="senate" ? (senByState[id]&&senByState[id].rating) : board==="governors" ? (govByState[id]&&govByState[id].rating) : null;
     el.classList.toggle("on-dark", !!(r && DARK_FILLS.has(r)));
+    el.classList.toggle("on-light", !!(r && !DARK_FILLS.has(r)));
   });
   // house bubbles
   const g = $("#cdBubbles");
@@ -345,7 +398,8 @@ function hemicycleSVG(segments, total, majorityLabel, leftLabel, rightLabel, cen
   const dots = pts.map((p,i)=>{
     const s = flat[i];
     const paint = s.hollow ? `fill="var(--surface)" stroke="${s.color}" stroke-width="2"` : `fill="${s.color}"`;
-    return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${(s.hollow?dotR-1:dotR).toFixed(1)}" ${paint}><title>${s.label} (${s.n})</title></circle>`;
+    const cls = (!s.hollow && s.color === COLORS["tossup"]) ? ` class="seat-toss"` : "";
+    return `<circle${cls} cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${(s.hollow?dotR-1:dotR).toFixed(1)}" ${paint}><title>${s.label} (${s.n})</title></circle>`;
   }).join("");
   return `<svg class="hemi" viewBox="0 0 ${W} ${H}" role="img" aria-label="${leftLabel} · ${rightLabel}">
     ${dots}
@@ -420,6 +474,23 @@ function renderCongress(){
 }
 
 /* ---------- economy ---------- */
+/* Formato de cifra y unidad: el número manda, el detalle baja a la nota. */
+function fmtNum(v){
+  if(typeof v === "number") return v.toLocaleString(lang==="es" ? "es-AR" : "en-US", {maximumFractionDigits:2});
+  // Rangos como "3.75–4.00" llevan coma decimal en español.
+  if(lang==="es" && typeof v === "string" && /^[\d.,–\-\s≈+]+$/.test(v)) return v.replace(/\./g, ",");
+  return v;
+}
+function shortUnit(u){ return u ? String(u).split(" (")[0] : ""; }
+function unitTail(u){
+  if(!u) return "";
+  const i = String(u).indexOf(" (");
+  if(i<0) return "";
+  const tail = String(u).slice(i+2).replace(/\)$/,"");
+  if(lang==="es" && /^trillions?$/i.test(tail)) return "";   // glosa en inglés, redundante acá
+  return tail + " · ";
+}
+
 function renderEconomy(){
   const ec = t().economy;
   $("#sec-economia").innerHTML = `
@@ -428,8 +499,8 @@ function renderEconomy(){
   <div class="card-row">${M.indicators.map(i=>`
     <div class="stat">
       <div class="k">${lang==="es"?i.label_es:i.label_en}</div>
-      <div class="v">${i.value===null?`<span style="font-size:20px;color:var(--ink-3)">${ec.nd}</span>`:i.value}${i.value!==null&&i.unit?` <small style="font-size:14px;font-family:'DM Sans';font-weight:600;color:var(--ink-3)">${i.unit}</small>`:""}</div>
-      <div class="trend">${i.trend}</div>
+      <div class="v">${i.value===null?`<span style="font-size:20px;color:var(--ink-3)">${ec.nd}</span>`:fmtNum(i.value)}${i.value!==null&&i.unit?` <small style="font-size:14px;font-family:'DM Sans';font-weight:600;color:var(--ink-3)">${shortUnit(i.unit)}</small>`:""}</div>
+      <div class="trend">${unitTail(i.unit)}${i.trend}</div>
       <div class="src">${i.source} · ${i.as_of}</div>
     </div>`).join("")}</div>
   <h2 class="sec-title" style="font-size:20px">${ec.scenTitle}</h2><p class="sec-sub">${ec.scenSub}</p>
@@ -446,6 +517,12 @@ function renderEconomy(){
 }
 
 /* ---------- latam ---------- */
+const LATAM_ANCHORS = [
+  {l_es:"Riesgo país Argentina",l_en:"Argentina country risk",v_es:"791 pts",v_en:"791 pts",d_es:"Máximo desde octubre de 2025, al viernes previo a la elección.",d_en:"Highest since October 2025, on the Friday before the election.",src:"Infobae, 2-nov-2026"},
+  {l_es:"Arancel combinado a Brasil",l_en:"Combined tariff on Brazil",v_es:"37,5 %",v_en:"37.5%",d_es:"Sección 301 más recargo por trabajo forzoso, sobre USD 10.800 millones.",d_en:"Section 301 plus forced-labour surcharge, on USD 10.8 billion.",src:"CNI vía The Rio Times"},
+  {l_es:"Swap del Tesoro con Argentina",l_en:"US Treasury swap with Argentina",v_es:"USD 20.000 M",v_en:"USD 20 bn",d_es:"Con el «No Argentina Bailout Act» demócrata ya presentado en el Congreso.",d_en:"With the Democratic 'No Argentina Bailout Act' already filed in Congress.",src:"Infobae · El Cronista, 2-nov-2026"},
+  {l_es:"Remesas a México 2025",l_en:"Remittances to Mexico 2025",v_es:"−4,6 %",v_en:"−4.6%",d_es:"Primera caída en 11 años; impuesto del 1 % vigente desde 2026.",d_en:"First drop in 11 years; 1% tax in force since 2026.",src:"Banxico vía Publimetro · BBVA Research"}
+];
 function renderLatam(){
   const la = t().latam, L = M.latam;
   const dimLabel = d => lang==="es"?d.label_es:d.label_en;
@@ -454,6 +531,14 @@ function renderLatam(){
   $("#sec-latam").innerHTML = `
   <h2 class="sec-title">${la.title}</h2>
   <div class="card"><p style="margin:0">${lang==="es"?L.overview.es:L.overview.en}</p></div>
+  <h2 class="sec-title" style="font-size:20px">${la.anchorsTitle}</h2>
+  <div class="card-row">${LATAM_ANCHORS.map(a=>`
+    <div class="stat stat-anchor">
+      <div class="k">${lang==="es"?a.l_es:a.l_en}</div>
+      <div class="v">${lang==="es"?a.v_es:a.v_en}</div>
+      <div class="d">${lang==="es"?a.d_es:a.d_en}</div>
+      <div class="src">${a.src}</div>
+    </div>`).join("")}</div>
   <h2 class="sec-title" style="font-size:20px">${la.matrixTitle}</h2><p class="sec-sub">${la.matrixSub}</p>
   <div class="card matrix"><table>
     <thead><tr><th>${la.country}</th><th>${la.exposure}</th>${L.dimensions.map(d=>`<th>${dimLabel(d)}</th>`).join("")}</tr></thead>
