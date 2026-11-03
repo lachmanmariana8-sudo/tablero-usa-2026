@@ -30,8 +30,10 @@ es:{
   congress:{
     title:"Congreso y escenarios de control",
     senBarTitle:"Senado — si los ratings de consenso se cumplen",
-    senBarNote:"Bancas que no se eligen en 2026 más las 35 en juego asignadas según el rating de consenso. Los toss-ups quedan sin asignar: son los que definen el control.",
+    senBarNote:"Un punto por banca: las que no se eligen en 2026 más las 35 en juego asignadas según el rating de consenso. Los toss-ups quedan sin asignar: son los que definen el control.",
     notUpD:"D sin elección", notUpR:"R sin elección",
+    senMajority:"51 para el control", houseMajority:"218 para la mayoría",
+    coherence:(nd,dr,toss,rr,nr)=>`Aritmética: ${nd} (D sin elección) + ${dr} (rating D) + ${toss} (toss-up) + ${rr} (rating R) + ${nr} (R sin elección) = ${nd+dr+toss+rr+nr} bancas.`,
     houseBarTitle:"Cámara — composición actual y umbral de mayoría",
     houseBarNote:"No hay proyección banca por banca de las 435: el consenso identifica 13 toss-ups y una ventaja demócrata de +8,6 en la boleta genérica.",
     closest:"Las carreras más cerradas del Senado", closestSub:"Ordenadas por el margen de la última encuesta disponible; el rating es el de consenso.",
@@ -86,8 +88,10 @@ en:{
   congress:{
     title:"Congress and control scenarios",
     senBarTitle:"Senate — if consensus ratings hold",
-    senBarNote:"Seats not up in 2026 plus the 35 contested seats assigned by consensus rating. Toss-ups stay unassigned: they decide control.",
+    senBarNote:"One dot per seat: those not up in 2026 plus the 35 contested seats assigned by consensus rating. Toss-ups stay unassigned: they decide control.",
     notUpD:"D not up", notUpR:"R not up",
+    senMajority:"51 for control", houseMajority:"218 for a majority",
+    coherence:(nd,dr,toss,rr,nr)=>`Arithmetic: ${nd} (D not up) + ${dr} (D-rated) + ${toss} (toss-up) + ${rr} (R-rated) + ${nr} (R not up) = ${nd+dr+toss+rr+nr} seats.`,
     houseBarTitle:"House — current composition and majority threshold",
     houseBarNote:"No seat-by-seat projection of all 435: the consensus flags 13 toss-ups and a D +8.6 generic-ballot lead.",
     closest:"The closest Senate races", closestSub:"Sorted by latest available poll margin; the rating is the consensus one.",
@@ -317,7 +321,41 @@ function senateProjection(){
   const rTotal = notUpR + byR["safe-r"] + byR["likely-r"] + byR["lean-r"];
   return {notUpD, notUpR, byR, dTotal, rTotal, toss: byR["tossup"]};
 }
-function seg(n, color, total){ return n>0 ? `<div class="cb-seg" style="width:${(n/total*100)}%;background:${color}" title="${n}"></div>` : ""; }
+/* Hemiciclo parlamentario: un punto por banca, llenado por ángulo de izquierda a derecha.
+   segments = [{n, color, label}] en orden izquierda→derecha; la suma de n DEBE ser igual a total (se verifica). */
+function hemicycleSVG(segments, total, majorityLabel, leftLabel, rightLabel, centerLabel){
+  const N = segments.reduce((a,s)=>a+s.n,0);
+  if(N !== total) return `<p class="sec-sub">⚠ inconsistencia: ${N} ≠ ${total}</p>`;
+  const W=820, H=424, cx=W/2, cy=H-46, r0=150, r1=320;
+  const rows = total<=120 ? 4 : 11;
+  const radii=[]; for(let i=0;i<rows;i++) radii.push(r0 + (r1-r0)*i/(rows-1));
+  const sumR = radii.reduce((a,b)=>a+b,0);
+  const per = radii.map(r=>Math.round(N*r/sumR));
+  per[rows-1] += N - per.reduce((a,b)=>a+b,0);
+  const rowGap = (r1-r0)/(rows-1);
+  let minChord = Infinity;
+  per.forEach((n,ri)=>{ if(n>1) minChord = Math.min(minChord, Math.PI*radii[ri]/(n-1)); });
+  const dotR = Math.max(2.5, Math.min(rowGap*0.42, minChord*0.42));
+  const pts=[];
+  per.forEach((n,ri)=>{ const r=radii[ri];
+    for(let k=0;k<n;k++){ const a = n===1 ? Math.PI/2 : Math.PI*(1 - k/(n-1)); pts.push({x:cx+r*Math.cos(a), y:cy-r*Math.sin(a), a}); }
+  });
+  pts.sort((p,q)=> q.a - p.a || p.y - q.y);
+  const flat=[]; segments.forEach(s=>{ for(let i=0;i<s.n;i++) flat.push(s); });
+  const dots = pts.map((p,i)=>{
+    const s = flat[i];
+    const paint = s.hollow ? `fill="var(--surface)" stroke="${s.color}" stroke-width="2"` : `fill="${s.color}"`;
+    return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${(s.hollow?dotR-1:dotR).toFixed(1)}" ${paint}><title>${s.label} (${s.n})</title></circle>`;
+  }).join("");
+  return `<svg class="hemi" viewBox="0 0 ${W} ${H}" role="img" aria-label="${leftLabel} · ${rightLabel}">
+    ${dots}
+    <line x1="${cx}" y1="${cy-r1-16}" x2="${cx}" y2="${cy-r0+34}" stroke="var(--ink)" stroke-width="2" stroke-dasharray="5 4"/>
+    <text x="${cx}" y="${cy-r1-26}" text-anchor="middle" class="hemi-maj">${majorityLabel}</text>
+    <text x="${cx-82}" y="${cy-12}" text-anchor="middle" class="hemi-total hemi-d">${leftLabel}</text>
+    <text x="${cx+82}" y="${cy-12}" text-anchor="middle" class="hemi-total hemi-r">${rightLabel}</text>
+    ${centerLabel?`<text x="${cx}" y="${cy-r0+58}" text-anchor="middle" class="hemi-center">${centerLabel}</text>`:""}
+  </svg>`;
+}
 
 function renderCongress(){
   const c = t().congress, p = senateProjection(), gb = E.house.generic_ballot, ctx = E.context;
@@ -332,27 +370,31 @@ function renderCongress(){
   <h2 class="sec-title">${c.title}</h2>
   <div class="card">
     <h3>${c.senBarTitle}</h3>
-    <div class="comp-bar">
-      <div class="cb-head"><span class="chip-d">D ${p.dTotal}</span><span class="mono">${p.toss} ${c.tossups}</span><span class="chip-r">R ${p.rTotal}</span></div>
-      <div class="cb-track">
-        ${seg(p.notUpD,"var(--safe-d)",100)}${seg(p.byR["safe-d"],COLORS["safe-d"],100)}${seg(p.byR["likely-d"],COLORS["likely-d"],100)}${seg(p.byR["lean-d"],COLORS["lean-d"],100)}${seg(p.toss,COLORS["tossup"],100)}${seg(p.byR["lean-r"],COLORS["lean-r"],100)}${seg(p.byR["likely-r"],COLORS["likely-r"],100)}${seg(p.byR["safe-r"],COLORS["safe-r"],100)}${seg(p.notUpR,"var(--safe-r)",100)}
-        <div class="cb-mid"><span class="cb-mid-label">50</span></div>
-      </div>
-      <div class="cb-legend">
-        <span><span class="sw" style="display:inline-block;width:11px;height:11px;border-radius:3px;background:var(--safe-d)"></span> ${c.notUpD}: ${p.notUpD}</span>
-        ${RATINGS.map(r=>`<span><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:${COLORS[r]}"></span> ${t().ratings[r]}: ${r==="tossup"?p.toss:p.byR[r]}</span>`).join("")}
-        <span><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:var(--safe-r)"></span> ${c.notUpR}: ${p.notUpR}</span>
-      </div>
-      <p class="sec-sub" style="margin-top:8px">${c.senBarNote}</p>
+    ${hemicycleSVG([
+      {n:p.notUpD, color:"var(--safe-d)", label:c.notUpD, hollow:true},
+      {n:p.byR["safe-d"], color:COLORS["safe-d"], label:t().ratings["safe-d"]},
+      {n:p.byR["likely-d"], color:COLORS["likely-d"], label:t().ratings["likely-d"]},
+      {n:p.byR["lean-d"], color:COLORS["lean-d"], label:t().ratings["lean-d"]},
+      {n:p.toss, color:COLORS["tossup"], label:t().ratings["tossup"]},
+      {n:p.byR["lean-r"], color:COLORS["lean-r"], label:t().ratings["lean-r"]},
+      {n:p.byR["likely-r"], color:COLORS["likely-r"], label:t().ratings["likely-r"]},
+      {n:p.byR["safe-r"], color:COLORS["safe-r"], label:t().ratings["safe-r"]},
+      {n:p.notUpR, color:"var(--safe-r)", label:c.notUpR, hollow:true}
+    ], 100, c.senMajority, `D ${p.dTotal}`, `R ${p.rTotal}`, `${p.toss} ${c.tossups}`)}
+    <div class="cb-legend">
+      <span><span class="sw-dot sw-hollow" style="border-color:var(--safe-d)"></span> ${c.notUpD}: ${p.notUpD}</span>
+      ${RATINGS.map(r=>`<span><span class="sw-dot" style="background:${COLORS[r]}"></span> ${t().ratings[r]}: ${r==="tossup"?p.toss:p.byR[r]}</span>`).join("")}
+      <span><span class="sw-dot sw-hollow" style="border-color:var(--safe-r)"></span> ${c.notUpR}: ${p.notUpR}</span>
     </div>
+    <p class="sec-sub" style="margin-top:8px">${c.senBarNote} ${c.coherence(p.notUpD, p.byR["safe-d"]+p.byR["likely-d"]+p.byR["lean-d"], p.toss, p.byR["safe-r"]+p.byR["likely-r"]+p.byR["lean-r"], p.notUpR)}</p>
   </div>
   <div class="card">
     <h3>${c.houseBarTitle}</h3>
-    <div class="comp-bar">
-      <div class="cb-head"><span class="chip-d">D 215</span><span class="mono">218</span><span class="chip-r">R 220</span></div>
-      <div class="cb-track">${seg(215,"var(--safe-d)",435)}${seg(220,"var(--safe-r)",435)}<div class="cb-mid" style="left:${218/435*100}%"><span class="cb-mid-label">218</span></div></div>
-      <p class="sec-sub" style="margin-top:8px">${c.houseBarNote}</p>
-    </div>
+    ${hemicycleSVG([
+      {n:E.house.current_composition.democrats, color:"var(--safe-d)", label:lang==="es"?"Demócratas":"Democrats"},
+      {n:E.house.current_composition.republicans, color:"var(--safe-r)", label:lang==="es"?"Republicanos":"Republicans"}
+    ], E.house.current_composition.total, c.houseMajority, `D ${E.house.current_composition.democrats}`, `R ${E.house.current_composition.republicans}`, "")}
+    <p class="sec-sub" style="margin-top:8px">${c.houseBarNote}</p>
     <div class="card-row">
       <div class="stat"><div class="k">${c.gb}</div><div class="v">${gb.average.replace("D +","D+")}</div><div class="d">${gb.aggregators.map(a=>`${a.name}: ${a.value}`).join(" · ")}</div><div class="src">${gb.as_of}</div></div>
       <div class="stat"><div class="k">${c.approval}</div><div class="v">${ctx.presidential_approval.aggregator_figure.approve}%</div><div class="d">${lang==="es"?"aprueba":"approve"} · ${ctx.presidential_approval.aggregator_figure.disapprove}% ${lang==="es"?"desaprueba":"disapprove"} (${ctx.presidential_approval.aggregator_figure.source})</div><div class="src">${ctx.presidential_approval.aggregator_figure.as_of}</div></div>

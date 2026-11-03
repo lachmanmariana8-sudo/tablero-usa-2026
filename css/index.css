@@ -104,6 +104,15 @@ h2.sec-title{font-size:26px;text-transform:uppercase;margin:26px 0 4px}
 .cb-mid{position:absolute;top:-6px;bottom:-6px;width:2px;background:var(--ink);left:50%}
 .cb-mid-label{position:absolute;top:-24px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink-3);white-space:nowrap}
 .cb-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2);margin-top:8px}
+.hemi{display:block;width:min(680px,100%);margin:6px auto 0}
+.hemi-total{font-family:"Big Shoulders Display",sans-serif;font-weight:800;font-size:40px}
+.hemi-d{fill:var(--dem)}.hemi-r{fill:var(--safe-r)}
+[data-theme="dark"] .hemi-d{fill:#7fb1e8}
+[data-theme="dark"] .hemi-r{fill:#f0a394}
+.hemi-maj{font:700 15px "DM Mono",monospace;fill:var(--ink)}
+.hemi-center{font:600 15px "DM Sans",sans-serif;fill:var(--ink-2)}
+.sw-dot{display:inline-block;width:11px;height:11px;border-radius:50%;vertical-align:-1px}
+.sw-hollow{background:var(--surface);border:2px solid;width:9px;height:9px}
 .race-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:12px}
 .race-card{border:1px solid var(--line);border-left-width:5px;border-radius:10px;padding:12px 14px;background:var(--surface)}
 .race-card .rc-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
