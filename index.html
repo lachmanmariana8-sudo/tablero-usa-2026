@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300..800;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/index.css?v=12">
+<link rel="stylesheet" href="css/index.css?v=13">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='44' fill='none' stroke='%231b2735' stroke-width='8'/><circle cx='50' cy='50' r='26' fill='none' stroke='%231b2735' stroke-width='8'/><circle cx='50' cy='50' r='10' fill='%23c0532e'/></svg>">
 </head>
 <body>
@@ -33,14 +33,17 @@
 </div>
 
 <nav class="tabs" role="tablist" aria-label="Secciones">
-  <button class="tab is-active" data-section="mapa" role="tab" aria-selected="true" data-i18n="tabMap"></button>
+  <button class="tab is-active" data-section="resultados" role="tab" aria-selected="true" data-i18n="tabResults"></button>
+  <button class="tab" data-section="mapa" role="tab" aria-selected="false" data-i18n="tabMap"></button>
   <button class="tab" data-section="congreso" role="tab" aria-selected="false" data-i18n="tabCongress"></button>
   <button class="tab" data-section="economia" role="tab" aria-selected="false" data-i18n="tabEconomy"></button>
   <button class="tab" data-section="latam" role="tab" aria-selected="false" data-i18n="tabLatam"></button>
 </nav>
 
 <main>
-  <section id="sec-mapa" class="section is-active" role="tabpanel">
+  <section id="sec-resultados" class="section is-active" role="tabpanel"></section>
+
+  <section id="sec-mapa" class="section" role="tabpanel">
     <h2 class="sec-title" data-i18n="jornadaTitle" style="margin-top:0"></h2>
     <div id="jornadaStrip" class="card-row"></div>
     <div id="jornadaNote"></div>
@@ -72,6 +75,7 @@
 <script src="data/jornada.js?v=5"></script>
 <script src="data/economia.js?v=2"></script>
 <script src="data/graficos.js?v=1"></script>
-<script src="js/app.js?v=12"></script>
+<script src="data/resultados.js?v=1"></script>
+<script src="js/app.js?v=13"></script>
 </body>
 </html>

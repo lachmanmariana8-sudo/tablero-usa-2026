@@ -28,8 +28,18 @@ es:{
   livePill:"Día de la elección · mar 3 nov 2026",
   heroTitle:"Elecciones de medio término · Estados Unidos 2026",
   heroSub:"35 bancas del Senado, las 435 de la Cámara de Representantes y 36 gobernaciones. Mapa estado por estado, escenarios de control del Congreso, variables económicas e impacto para América Latina.",
-  tabMap:"Mapa nacional", tabCongress:"Congreso y escenarios", tabEconomy:"Economía", tabLatam:"América Latina",
+  tabResults:"Resultados", tabMap:"Mapa nacional", tabCongress:"Congreso y escenarios", tabEconomy:"Economía", tabLatam:"América Latina",
   boards:{senate:"Senado",governors:"Gobernaciones",house:"Cámara"},
+  results:{
+    title:"Resultados", updated:"Actualizado", autoEvery:"se actualiza solo cada 2 min", refreshNow:"Actualizar ahora",
+    senateK:"Senado · bancas llamadas", houseK:"Cámara · distritos clave llamados", govK:"Gobernaciones · llamadas",
+    nextClose:"Próximo cierre de urnas", statusTitle:"Estado de la jornada",
+    watchTitle:"Carreras para seguir", watchSub:"Los toss-ups de consenso, con el resultado en vivo a medida que se cuenta.",
+    pending:"Sin datos", reporting:"Contando", reportingLow:"escrutado", called:"Gana", wins:"gana",
+    pendingNote:"Sin resultados reportados.", noTossups:"Sin toss-ups en este tablero.",
+    calledOf:n=>`de ${n} en juego`,
+    houseKeyNote:"Sólo los distritos toss-up de consenso; no es el resultado de la Cámara completa."
+  },
   jornadaTitle:"El pulso de la jornada",
   jornada:{
     earlyVote:"Voto anticipado", earlyVoteD:"Récord absoluto para una elección de medio término; en 2022 fueron 45,9 millones.",
@@ -94,8 +104,18 @@ en:{
   livePill:"Election Day · Tue Nov 3, 2026",
   heroTitle:"United States 2026 Midterm Elections",
   heroSub:"35 Senate seats, all 435 House seats and 36 governorships. A state-by-state map, congressional control scenarios, economic variables and the impact on Latin America.",
-  tabMap:"National map", tabCongress:"Congress & scenarios", tabEconomy:"Economy", tabLatam:"Latin America",
+  tabResults:"Results", tabMap:"National map", tabCongress:"Congress & scenarios", tabEconomy:"Economy", tabLatam:"Latin America",
   boards:{senate:"Senate",governors:"Governors",house:"House"},
+  results:{
+    title:"Results", updated:"Updated", autoEvery:"auto-updates every 2 min", refreshNow:"Refresh now",
+    senateK:"Senate · seats called", houseK:"House · key districts called", govK:"Governorships · called",
+    nextClose:"Next poll closing", statusTitle:"Status of the night",
+    watchTitle:"Races to watch", watchSub:"Consensus toss-ups, with live results as the count comes in.",
+    pending:"No data", reporting:"Counting", reportingLow:"reporting", called:"Winner", wins:"wins",
+    pendingNote:"No results reported.", noTossups:"No toss-ups on this board.",
+    calledOf:n=>`of ${n} up for election`,
+    houseKeyNote:"Consensus toss-up districts only; not the full House result."
+  },
   jornadaTitle:"Election-day pulse",
   jornada:{
     earlyVote:"Early vote", earlyVoteD:"An all-time midterm record; 2022 saw 45.9 million.",
@@ -163,7 +183,7 @@ en:{
 }
 };
 
-let lang = "es", board = "senate";
+let lang = "es", board = "senate", resultsBoard = "senate";
 try{ lang = localStorage.getItem("tb_lang") || "es"; }catch(e){}
 const $ = s => document.querySelector(s);
 const t = () => I18N[lang];
@@ -376,6 +396,139 @@ function showStateDetail(id){
   box.innerHTML = html + "</div>"; box.hidden = false;
   box.scrollIntoView({behavior:"smooth", block:"nearest"});
 }
+
+/* ---------- resultados (en vivo, auto-actualización cada 2 min) ---------- */
+function raceList(boardKey){
+  if(boardKey==="senate") return E.senate.races.map(r=>({code:r.state, name:r.state_name, rating:r.rating, dem:r.dem_candidate, rep:r.rep_candidate}));
+  if(boardKey==="governors") return E.governors.races.map(r=>({code:r.state, name:r.state_name, rating:r.rating, dem:r.dem_candidate, rep:r.rep_candidate}));
+  return E.house.key_districts.map(d=>({code:d.district, name:d.district, rating:d.rating, dem:d.dem, rep:d.rep}));
+}
+/* Una carrera sin entrada en DATA_RESULTADOS.results se trata como "sin reportar": no hace falta precargar las 87. */
+function resultFor(boardKey, code){
+  const RES = window.DATA_RESULTADOS;
+  return (RES && RES.results && RES.results[boardKey] && RES.results[boardKey][code]) || {status:"not_reported"};
+}
+function tallyBoard(boardKey){
+  const list = raceList(boardKey);
+  let d=0, r=0;
+  list.forEach(x=>{
+    const res = resultFor(boardKey, x.code);
+    if(res.status==="called"){ if(res.called_for==="D") d++; else if(res.called_for==="R") r++; }
+  });
+  return {d, r, total:list.length};
+}
+function statusBadge(res){
+  const rt = t().results;
+  if(res.status==="called") return `<span class="res-badge res-badge-called party-${res.called_for==="D"?"d":"r"}">${rt.called} ${res.called_for}</span>`;
+  if(res.status==="reporting") return `<span class="res-badge res-badge-live">${rt.reporting}${res.pct!=null?" · "+fmtNum(res.pct)+"%":""}</span>`;
+  return `<span class="res-badge res-badge-pending">${rt.pending}</span>`;
+}
+function tile(x, boardKey){
+  const res = resultFor(boardKey, x.code);
+  const base = COLORS[x.rating] || "var(--neutral-state)";
+  const cls = res.status==="reporting" ? "is-live" : res.status==="called" ? "is-called" : "";
+  const bg = res.status==="called" ? COLORS[res.called_for==="D"?"safe-d":"safe-r"] : `color-mix(in srgb, ${base} 22%, var(--surface-2))`;
+  const tip = `${x.name}${res.status!=="not_reported"?" · "+(res.leader||(res.called_for?(res.called_for==="D"?x.dem:x.rep):"")) + (res.margin?" "+res.margin:""):""}`;
+  return `<div class="tile ${cls}" style="background:${bg}" title="${tip}"><span class="tile-dot"></span>${x.code}</div>`;
+}
+function resultRaceCard(x, boardKey){
+  const res = resultFor(boardKey, x.code), rt = t().results;
+  let body;
+  if(res.status==="called") body = `<span class="rc-margin">${res.called_for==="D"?x.dem:x.rep} ${rt.wins}</span>${res.margin?" · "+res.margin:""}`;
+  else if(res.status==="reporting") body = `${res.pct!=null?fmtNum(res.pct)+"% "+rt.reportingLow:""}${res.leader?" · "+res.leader+(res.margin?" +"+res.margin:""):""}`;
+  else body = rt.pendingNote;
+  return `<div class="race-card" style="border-left-color:${COLORS[x.rating]}">
+    <div class="rc-top"><span class="rc-state">${x.name}</span>${statusBadge(res)}</div>
+    <div class="rc-cand">${candRow(x.dem, x.rep)}</div>
+    <div class="rc-result">${body}${res.pct!=null?`<div class="pct-bar"><div class="pct-bar-fill" style="width:${res.pct}%"></div></div>`:""}</div>
+    ${res.source?`<div class="src">${res.source}${res.as_of?" · "+res.as_of:""}</div>`:""}
+  </div>`;
+}
+/* jornada.js sólo trae los nombres de estado en español (son datos, no texto de interfaz); se traducen acá para el modo inglés. */
+const ES_EN_STATE = {"Carolina del Norte":"North Carolina","Carolina del Sur":"South Carolina","Dakota del Norte":"North Dakota","Dakota del Sur":"South Dakota","Luisiana":"Louisiana","Misisipi":"Mississippi","Misuri":"Missouri","Nueva Jersey":"New Jersey","Nuevo Hampshire":"New Hampshire","Nuevo México":"New Mexico","Pensilvania":"Pennsylvania","Virginia Occidental":"West Virginia","Oregón":"Oregon","Alaska (islas Aleutianas)":"Alaska (Aleutian Islands)"};
+const ES_EN_REGION = {"Este":"Eastern","Centro":"Central","Montaña":"Mountain","Pacífico":"Pacific"};
+function enStateLabel(s){
+  let out = s;
+  Object.keys(ES_EN_STATE).forEach(k=>{ if(out.includes(k)) out = out.replace(k, ES_EN_STATE[k]); });
+  return out.replace(/\(([^)]+)\)/, (m,g)=>`(${ES_EN_REGION[g]||g})`);
+}
+/* Próximo cierre de urnas: se calcula contra el reloj, no se hardcodea — así sigue siendo correcto toda la noche. */
+function nextClosing(){
+  if(!J || !J.jornada || !J.jornada.poll_closing_times) return null;
+  const sched = J.jornada.poll_closing_times.schedule_et, entries=[];
+  Object.keys(sched).forEach(k=>{
+    const m = k.match(/^(\d{2}):(\d{2})(?:\s*\((\d+)-nov\))?$/); if(!m) return;
+    const dayOffset = m[3] ? (parseInt(m[3],10)-3) : 0;
+    // Hora ET en horario estándar (UTC-5) el 3-nov-2026; ya no rige el horario de verano.
+    const time = new Date(Date.UTC(2026,10,3+dayOffset, parseInt(m[1],10)+5, parseInt(m[2],10)));
+    entries.push({time, label:k, states:sched[k]});
+  });
+  entries.sort((a,b)=>a.time-b.time);
+  const now = Date.now();
+  return entries.find(e=>e.time.getTime() > now - 60000) || null;
+}
+function relTime(iso){
+  if(!iso) return "";
+  const diffSec = Math.max(0, Math.round((Date.now()-new Date(iso).getTime())/1000));
+  if(diffSec<60) return lang==="es"?`hace ${diffSec}s`:`${diffSec}s ago`;
+  return lang==="es"?`hace ${Math.round(diffSec/60)} min`:`${Math.round(diffSec/60)} min ago`;
+}
+function renderResultados(){
+  const RES = window.DATA_RESULTADOS, rt = t().results;
+  if(!RES){ $("#sec-resultados").innerHTML=""; return; }
+  const tallies = {}; ["senate","governors","house"].forEach(b=>tallies[b]=tallyBoard(b));
+  const nc = nextClosing(), statusNote = lang==="es"?RES.status_note_es:RES.status_note_en;
+  $("#sec-resultados").innerHTML = `
+  <div class="results-toolbar">
+    <h2 class="sec-title" style="margin:0">${rt.title}</h2>
+    <div class="results-updated"><span class="dot"></span>${rt.updated} <span id="resultsAgo">${relTime(RES.metadata.generated)}</span> · ${rt.autoEvery}
+      <button type="button" class="btn-refresh" id="resultsRefreshBtn">${rt.refreshNow}</button>
+    </div>
+  </div>
+  <div class="card-row">
+    <div class="stat stat-live"><div class="k">${rt.senateK}</div><div class="v">${tallies.senate.d}–${tallies.senate.r}</div><div class="d">${rt.calledOf(tallies.senate.total)}</div></div>
+    <div class="stat stat-live"><div class="k">${rt.houseK}</div><div class="v">${tallies.house.d}–${tallies.house.r}</div><div class="d">${rt.houseKeyNote}</div></div>
+    <div class="stat stat-live"><div class="k">${rt.govK}</div><div class="v">${tallies.governors.d}–${tallies.governors.r}</div><div class="d">${rt.calledOf(tallies.governors.total)}</div></div>
+    <div class="stat stat-live"><div class="k">${rt.nextClose}</div><div class="v">${nc?nc.label+" ET":"—"}</div><div class="d">${nc?(lang==="es"?nc.states:nc.states.map(enStateLabel)).slice(0,3).join(", ")+(nc.states.length>3?"…":""):""}</div></div>
+  </div>
+  <div class="card card-pending">
+    <div class="inc-k">${rt.statusTitle}</div><p>${statusNote||""}</p>
+  </div>
+  <div class="board-switch" id="resultsBoardSwitch" style="margin-top:16px"></div>
+  <div class="tile-grid" id="resultsTiles"></div>
+  <h2 class="sec-title" style="font-size:20px">${rt.watchTitle}</h2><p class="sec-sub">${rt.watchSub}</p>
+  <div class="race-list" id="resultsWatchList"></div>`;
+  renderResultsBoardSwitch(); paintResultsBoard();
+  $("#resultsRefreshBtn").addEventListener("click", ()=>loadResultsData(renderResultados));
+}
+function renderResultsBoardSwitch(){
+  $("#resultsBoardSwitch").innerHTML = ["senate","governors","house"].map(b=>
+    `<button type="button" data-board="${b}" class="${b===resultsBoard?"is-active":""}">${t().boards[b]}</button>`).join("");
+  document.querySelectorAll("#resultsBoardSwitch button").forEach(btn=>btn.addEventListener("click", ()=>{
+    resultsBoard = btn.dataset.board; renderResultsBoardSwitch(); paintResultsBoard();
+  }));
+}
+function paintResultsBoard(){
+  const list = raceList(resultsBoard);
+  $("#resultsTiles").innerHTML = list.map(x=>tile(x, resultsBoard)).join("");
+  const watch = list.filter(x=>x.rating==="tossup");
+  $("#resultsWatchList").innerHTML = watch.map(x=>resultRaceCard(x, resultsBoard)).join("") || `<p class="sec-sub">${t().results.noTossups}</p>`;
+}
+/* Recarga data/resultados.js con un <script> nuevo (no se puede "re-importar" un script ya corrido) y vuelve a pintar. */
+let resultsScriptEl = null;
+function loadResultsData(cb){
+  const prev = resultsScriptEl, s = document.createElement("script");
+  s.src = "data/resultados.js?t=" + Date.now();
+  s.onload = ()=>{ if(prev) prev.remove(); resultsScriptEl = s; cb && cb(); };
+  s.onerror = ()=>{ if(prev) prev.remove(); };
+  document.body.appendChild(s);
+}
+setInterval(()=>loadResultsData(renderResultados), 120000);
+/* El "hace Xs" se refresca más seguido que el dato en sí, para que la pantalla se sienta viva entre corridas. */
+setInterval(()=>{
+  const el = document.getElementById("resultsAgo");
+  if(el && window.DATA_RESULTADOS) el.textContent = relTime(window.DATA_RESULTADOS.metadata.generated);
+}, 15000);
 
 /* ---------- congress ---------- */
 function senateProjection(){
@@ -727,7 +880,7 @@ function showCountry(code){
 /* ---------- sources ---------- */
 /* ---------- boot ---------- */
 function renderAll(){
-  applyStatic(); renderSummary(); renderBoardSwitch(); paintBoard();
+  applyStatic(); renderResultados(); renderSummary(); renderBoardSwitch(); paintBoard();
   renderCongress(); renderEconomy(); renderLatam();
   $("#stateDetail").hidden = true;
 }
