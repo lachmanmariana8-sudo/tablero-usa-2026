@@ -256,7 +256,8 @@ function renderJornada(){
       <div class="k">${j.closing}</div><div class="v">18:00 ET</div>
       <div class="d">${j.closingD}</div><div class="src">Fox News live blog · 3-nov-2026</div>
     </div>`;
-  $("#jornadaNote").innerHTML = `<div class="card card-incident"><div class="inc-k">${j.incTitle}</div><p>${lang==="es"?J.jornada.incidents_es:J.jornada.incidents_en}</p></div>`;
+  const vNote = J.jornada.verification_note_es && (lang==="es"?J.jornada.verification_note_es:J.jornada.verification_note_en);
+  $("#jornadaNote").innerHTML = `<div class="card card-incident"><div class="inc-k">${j.incTitle}</div><p>${lang==="es"?J.jornada.incidents_es:J.jornada.incidents_en}</p>${vNote?`<p class="jornada-verify">${vNote}</p>`:""}</div>`;
 }
 
 function buildMapOnce(){
