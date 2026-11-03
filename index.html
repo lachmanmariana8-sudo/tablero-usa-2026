@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elecciones EE.UU. 2026 — Tablero Democrac.IA</title>
+<meta name="description" content="Tablero de monitoreo de las elecciones de medio término de EE.UU. 2026: mapa por estado, Congreso y escenarios, variables económicas e impacto para América Latina. Democrac.IA / Ágora Data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300..800;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/index.css?v=1">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='44' fill='none' stroke='%231b2735' stroke-width='8'/><circle cx='50' cy='50' r='26' fill='none' stroke='%231b2735' stroke-width='8'/><circle cx='50' cy='50' r='10' fill='%23c0532e'/></svg>">
+</head>
+<body>
+<header class="site-header">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" fill="none" stroke="currentColor" stroke-width="8"/><circle cx="50" cy="50" r="26" fill="none" stroke="currentColor" stroke-width="8"/><circle cx="50" cy="50" r="10" fill="var(--accent)" stroke="none"/></svg>
+    <div class="brand-text">
+      <span class="brand-name">Democrac<span class="accent">.IA</span></span>
+      <span class="brand-sub" data-i18n="brandSub"></span>
+    </div>
+  </div>
+  <div class="header-tools">
+    <div class="live-pill"><span class="live-dot"></span><span data-i18n="livePill"></span></div>
+    <button id="langToggle" class="tool-btn" type="button" aria-label="Switch language">EN</button>
+    <button id="themeToggle" class="tool-btn" type="button" aria-label="Cambiar tema">◐</button>
+  </div>
+</header>
+
+<div class="hero">
+  <h1 class="hero-title" data-i18n="heroTitle"></h1>
+  <p class="hero-sub" data-i18n="heroSub"></p>
+</div>
+
+<nav class="tabs" role="tablist" aria-label="Secciones">
+  <button class="tab is-active" data-section="mapa" role="tab" aria-selected="true" data-i18n="tabMap"></button>
+  <button class="tab" data-section="congreso" role="tab" aria-selected="false" data-i18n="tabCongress"></button>
+  <button class="tab" data-section="economia" role="tab" aria-selected="false" data-i18n="tabEconomy"></button>
+  <button class="tab" data-section="latam" role="tab" aria-selected="false" data-i18n="tabLatam"></button>
+  <button class="tab" data-section="fuentes" role="tab" aria-selected="false" data-i18n="tabSources"></button>
+</nav>
+
+<main>
+  <section id="sec-mapa" class="section is-active" role="tabpanel">
+    <div id="mapSummary" class="card-row"></div>
+    <div class="map-wrap card">
+      <div class="map-toolbar">
+        <div class="board-switch" id="boardSwitch"></div>
+        <p class="map-hint" data-i18n="mapHint"></p>
+      </div>
+      <div class="map-stage"><svg id="usMap" role="img"></svg><div id="mapTip" class="map-tip" hidden></div></div>
+      <div id="mapLegend" class="legend"></div>
+    </div>
+    <div id="stateDetail" class="card state-detail" hidden></div>
+    <div id="houseKeyRaces"></div>
+  </section>
+
+  <section id="sec-congreso" class="section" role="tabpanel"></section>
+  <section id="sec-economia" class="section" role="tabpanel"></section>
+  <section id="sec-latam" class="section" role="tabpanel"></section>
+  <section id="sec-fuentes" class="section" role="tabpanel"></section>
+</main>
+
+<footer class="site-footer">
+  <p><strong>Democrac.IA</strong> · Ágora Data — <span data-i18n="footerLine"></span></p>
+  <p class="foot-note" data-i18n="footerNote"></p>
+</footer>
+
+<script src="data/map_paths.js?v=1"></script>
+<script src="data/electoral.js?v=1"></script>
+<script src="data/economia.js?v=1"></script>
+<script src="js/app.js?v=1"></script>
+</body>
+</html>
