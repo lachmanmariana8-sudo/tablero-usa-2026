@@ -500,6 +500,21 @@ function nextClosing(){
   const now = Date.now();
   return entries.find(e=>e.time.getTime() > now - 60000) || null;
 }
+/* El status_note es un párrafo único por chamber (Senado:/Cámara:/Gobernaciones: o Senate:/House:/Governors:).
+   Se corta ahí para mostrarlo como párrafos cortos con el chamber en negrita, en vez de un bloque de texto corrido.
+   Si el texto no trae esas etiquetas (formato futuro distinto), se muestra tal cual, en un solo párrafo. */
+const STATUS_LABELS = ["Senado","Cámara","Gobernaciones","Senate","House","Governors"];
+function statusSections(text){
+  if(!text) return "";
+  const re = new RegExp("(?="+STATUS_LABELS.join("|")+":\\s)");
+  const parts = text.split(re).map(s=>s.trim()).filter(Boolean);
+  if(parts.length<=1) return `<p>${text}</p>`;
+  return parts.map(p=>{
+    const m = p.match(/^([^:]+):\s*/);
+    if(!m) return `<p>${p}</p>`;
+    return `<p><strong>${m[1]}:</strong> ${p.slice(m[0].length)}</p>`;
+  }).join("");
+}
 function renderResultados(){
   const RES = window.DATA_RESULTADOS, rt = t().results;
   if(!RES){ $("#sec-resultados").innerHTML=""; return; }
@@ -518,9 +533,10 @@ function renderResultados(){
     <div class="stat stat-live"><div class="k">${rt.govK}</div><div class="v"><span class="chip-d">${tallies.governors.d}</span>–<span class="chip-r">${tallies.governors.r}</span></div><div class="d">${rt.calledOf(tallies.governors.total)}</div></div>
     <div class="stat stat-live"><div class="k">${rt.nextClose}</div><div class="v">${nc?nc.label+" ET":"—"}</div><div class="d">${nc?(lang==="es"?nc.states:nc.states.map(enStateLabel)).slice(0,3).join(", ")+(nc.states.length>3?"…":""):""}</div></div>
   </div>
-  <div class="card card-pending">
-    <div class="inc-k">${rt.statusTitle}</div><p>${statusNote||""}</p>
-  </div>
+  <details class="card card-pending status-details" open>
+    <summary class="inc-k">${rt.statusTitle}</summary>
+    <div class="status-body">${statusSections(statusNote)}</div>
+  </details>
   <div class="legend" id="resultsLegend" style="margin-top:16px;padding-top:0;border-top:none">
     <div class="lg"><span class="sw" style="background:var(--dem)"></span>${rt.legendDem}</div>
     <div class="lg"><span class="sw" style="background:var(--gop)"></span>${rt.legendRep}</div>
