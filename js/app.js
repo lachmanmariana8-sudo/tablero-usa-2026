@@ -34,7 +34,7 @@ es:{
     title:"Resultados", refreshNow:"Actualizar ahora",
     senateK:"Senado · bancas llamadas", houseK:"Cámara · distritos clave llamados", govK:"Gobernaciones · llamadas",
     nextClose:"Próximo cierre de urnas", statusTitle:"Estado de la jornada",
-    watchTitle:"Carreras para seguir", watchSub:"Los toss-ups de consenso, con el resultado en vivo a medida que se cuenta.",
+    watchTitle:"Carreras para seguir", watchSub:"Los toss-ups de consenso y cualquier otra carrera con datos reportados, con el resultado en vivo a medida que se cuenta.",
     pending:"Sin datos", reporting:"Contando", reportingLow:"escrutado", called:"Gana", wins:"gana",
     legendDem:"Demócrata", legendRep:"Republicano", flipTag:"Vuelco",
     legendNote:"El color del punto, la barra de % escrutado, la insignia y el nombre del candidato muestran qué partido lidera o ganó, según la fuente citada en cada tarjeta. El tono de fondo de las fichas sin resultado es la calificación de consenso previa a la elección (de \"Seguro D\" a \"Seguro R\", igual que en el mapa nacional), no un resultado.",
@@ -112,7 +112,7 @@ en:{
     title:"Results", refreshNow:"Refresh now",
     senateK:"Senate · seats called", houseK:"House · key districts called", govK:"Governorships · called",
     nextClose:"Next poll closing", statusTitle:"Status of the night",
-    watchTitle:"Races to watch", watchSub:"Consensus toss-ups, with live results as the count comes in.",
+    watchTitle:"Races to watch", watchSub:"Consensus toss-ups plus any other race with reported data, with live results as the count comes in.",
     pending:"No data", reporting:"Counting", reportingLow:"reporting", called:"Winner", wins:"wins",
     legendDem:"Democrat", legendRep:"Republican", flipTag:"Flip",
     legendNote:"The dot, the % reporting bar, the badge and the candidate name show which party is leading or won, per the source cited on each card. The background shade on tiles with no result is the pre-election consensus rating (from \"Safe D\" to \"Safe R\", same as the national map), not a result.",
@@ -540,10 +540,16 @@ function renderResultsBoardSwitch(){
     resultsBoard = btn.dataset.board; renderResultsBoardSwitch(); paintResultsBoard();
   }));
 }
+/* Tarjetas: todo toss-up de consenso + cualquier otra carrera que ya tenga datos reportados
+   (si no, el % escrutado de una carrera "segura" que está contando queda sólo en el tooltip,
+   que en touch/mobile no se puede activar). Se ordena para que lo que tiene dato vaya primero. */
 function paintResultsBoard(){
   const list = raceList(resultsBoard);
   $("#resultsTiles").innerHTML = list.map(x=>tile(x, resultsBoard)).join("");
-  const watch = list.filter(x=>x.rating==="tossup");
+  const statusRank = s => s==="called" ? 0 : s==="reporting" ? 1 : 2;
+  const watch = list
+    .filter(x=> x.rating==="tossup" || resultFor(resultsBoard, x.code).status!=="not_reported")
+    .sort((a,b)=> statusRank(resultFor(resultsBoard,a.code).status) - statusRank(resultFor(resultsBoard,b.code).status));
   $("#resultsWatchList").innerHTML = watch.map(x=>resultRaceCard(x, resultsBoard)).join("") || `<p class="sec-sub">${t().results.noTossups}</p>`;
 }
 /* Recarga data/resultados.js con un <script> nuevo (no se puede "re-importar" un script ya corrido) y vuelve a pintar. */
