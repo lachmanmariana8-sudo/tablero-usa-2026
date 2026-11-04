@@ -36,7 +36,7 @@ es:{
     nextClose:"Próximo cierre de urnas", statusTitle:"Estado de la jornada",
     watchTitle:"Carreras para seguir", watchSub:"Los toss-ups de consenso, con el resultado en vivo a medida que se cuenta.",
     pending:"Sin datos", reporting:"Contando", reportingLow:"escrutado", called:"Gana", wins:"gana",
-    legendDem:"Demócrata", legendRep:"Republicano",
+    legendDem:"Demócrata", legendRep:"Republicano", flipTag:"Vuelco",
     legendNote:"El color del punto, la barra de % escrutado, la insignia y el nombre del candidato muestran qué partido lidera o ganó, según la fuente citada en cada tarjeta. El tono de fondo de las fichas sin resultado es la calificación de consenso previa a la elección (de \"Seguro D\" a \"Seguro R\", igual que en el mapa nacional), no un resultado.",
     pendingNote:"Sin resultados reportados.", noTossups:"Sin toss-ups en este tablero.",
     calledOf:n=>`de ${n} en juego`,
@@ -114,7 +114,7 @@ en:{
     nextClose:"Next poll closing", statusTitle:"Status of the night",
     watchTitle:"Races to watch", watchSub:"Consensus toss-ups, with live results as the count comes in.",
     pending:"No data", reporting:"Counting", reportingLow:"reporting", called:"Winner", wins:"wins",
-    legendDem:"Democrat", legendRep:"Republican",
+    legendDem:"Democrat", legendRep:"Republican", flipTag:"Flip",
     legendNote:"The dot, the % reporting bar, the badge and the candidate name show which party is leading or won, per the source cited on each card. The background shade on tiles with no result is the pre-election consensus rating (from \"Safe D\" to \"Safe R\", same as the national map), not a result.",
     pendingNote:"No results reported.", noTossups:"No toss-ups on this board.",
     calledOf:n=>`of ${n} up for election`,
@@ -403,9 +403,14 @@ function showStateDetail(id){
 
 /* ---------- resultados (en vivo, auto-actualización cada 2 min) ---------- */
 function raceList(boardKey){
-  if(boardKey==="senate") return E.senate.races.map(r=>({code:r.state, name:r.state_name, rating:r.rating, dem:r.dem_candidate, rep:r.rep_candidate}));
-  if(boardKey==="governors") return E.governors.races.map(r=>({code:r.state, name:r.state_name, rating:r.rating, dem:r.dem_candidate, rep:r.rep_candidate}));
-  return E.house.key_districts.map(d=>({code:d.district, name:d.district, rating:d.rating, dem:d.dem, rep:d.rep}));
+  if(boardKey==="senate") return E.senate.races.map(r=>({code:r.state, name:r.state_name, rating:r.rating, dem:r.dem_candidate, rep:r.rep_candidate, defendingParty:r.defending_party}));
+  if(boardKey==="governors") return E.governors.races.map(r=>({code:r.state, name:r.state_name, rating:r.rating, dem:r.dem_candidate, rep:r.rep_candidate, defendingParty:r.incumbent_party}));
+  return E.house.key_districts.map(d=>({code:d.district, name:d.district, rating:d.rating, dem:d.dem, rep:d.rep, defendingParty:null}));
+}
+/* "Vuelco": la carrera se llamó para el partido que NO defendía la banca. Sólo se puede saber en Senado/Gobernaciones,
+   donde electoral.js trae quién defendía; en Cámara (key_districts) ese dato no está estructurado y se omite. */
+function isFlip(x, res){
+  return res.status==="called" && x.defendingParty && res.called_for!==x.defendingParty;
 }
 /* Una carrera sin entrada en DATA_RESULTADOS.results se trata como "sin reportar": no hace falta precargar las 87. */
 function resultFor(boardKey, code){
@@ -434,20 +439,30 @@ function statusBadge(res){
    la ficha tenga un destello en vez de simplemente reaparecer distinta. */
 let prevTileStatus = {};
 function tile(x, boardKey){
-  const res = resultFor(boardKey, x.code);
+  const res = resultFor(boardKey, x.code), rt = t().results;
   const base = COLORS[x.rating] || "var(--neutral-state)";
   const cls = res.status==="reporting" ? "is-live" : res.status==="called" ? "is-called" : "";
   const partyCls = res.status==="reporting" && res.leader_party ? " party-"+(res.leader_party==="D"?"d":"r") : "";
+  const flip = isFlip(x, res);
   const bg = res.status==="called" ? COLORS[res.called_for==="D"?"safe-d":"safe-r"] : `color-mix(in srgb, ${base} 22%, var(--surface-2))`;
-  const tip = `${x.name}${res.status!=="not_reported"?" · "+(res.leader||(res.called_for?(res.called_for==="D"?x.dem:x.rep):"")) + (res.margin?" "+res.margin:""):""}`;
+  let tip = x.name;
+  if(res.status!=="not_reported"){
+    let line = res.leader||(res.called_for?(res.called_for==="D"?x.dem:x.rep):"");
+    if(res.margin) line += " "+res.margin;
+    if(res.pct!=null) line += " · "+fmtNum(res.pct)+"% "+rt.reportingLow;
+    if(flip) line += " · "+rt.flipTag;
+    tip += " · "+line;
+    if(res.source) tip += " · "+res.source+(res.as_of?" · "+res.as_of:"");
+  }
   const key = boardKey+":"+x.code;
   const changed = prevTileStatus[key] !== undefined && prevTileStatus[key] !== res.status;
   prevTileStatus[key] = res.status;
-  return `<div class="tile ${cls}${partyCls}${changed?" tile-flash":""}" style="background:${bg}" title="${tip}"><span class="tile-dot"></span>${x.code}</div>`;
+  return `<div class="tile ${cls}${partyCls}${flip?" is-flip":""}${changed?" tile-flash":""}" style="background:${bg}" title="${tip}">${flip?'<span class="tile-flip">⇄</span>':""}<span class="tile-dot"></span>${x.code}</div>`;
 }
 function resultRaceCard(x, boardKey){
   const res = resultFor(boardKey, x.code), rt = t().results;
   const partyChip = p => p==="D"?"chip-d":p==="R"?"chip-r":"";
+  const flip = isFlip(x, res);
   let body;
   if(res.status==="called") body = `<span class="rc-margin ${partyChip(res.called_for)}">${res.called_for==="D"?x.dem:x.rep} ${rt.wins}</span>${res.margin?" · "+res.margin:""}`;
   else if(res.status==="reporting"){
@@ -456,7 +471,7 @@ function resultRaceCard(x, boardKey){
   } else body = rt.pendingNote;
   const fillCls = res.status==="called" ? (res.called_for==="D"?"fill-d":"fill-r") : res.leader_party==="D"?"fill-d":res.leader_party==="R"?"fill-r":"";
   return `<div class="race-card" style="border-left-color:${COLORS[x.rating]}">
-    <div class="rc-top"><span class="rc-state">${x.name}</span>${statusBadge(res)}</div>
+    <div class="rc-top"><span class="rc-state">${x.name}</span>${flip?`<span class="res-badge flip-badge">${rt.flipTag}</span>`:""}${statusBadge(res)}</div>
     <div class="rc-cand">${candRow(x.dem, x.rep)}</div>
     <div class="rc-result">${body}${res.pct!=null?`<div class="pct-bar"><div class="pct-bar-fill ${fillCls}" style="width:${res.pct}%"></div></div>`:""}</div>
     ${res.source?`<div class="src">${res.source}${res.as_of?" · "+res.as_of:""}</div>`:""}
