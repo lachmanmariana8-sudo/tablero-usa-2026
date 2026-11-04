@@ -543,6 +543,7 @@ function renderResultados(){
   </div>
   <p class="sec-sub" style="margin-top:4px">${rt.legendNote}</p>
   <div class="board-switch" id="resultsBoardSwitch" style="margin-top:12px"></div>
+  <div id="resultsHemi" style="margin-top:12px"></div>
   <div class="tile-grid" id="resultsTiles"></div>
   <h2 class="sec-title" style="font-size:20px">${rt.watchTitle}</h2><p class="sec-sub">${rt.watchSub}</p>
   <div class="race-list" id="resultsWatchList"></div>`;
@@ -556,11 +557,58 @@ function renderResultsBoardSwitch(){
     resultsBoard = btn.dataset.board; renderResultsBoardSwitch(); paintResultsBoard();
   }));
 }
+/* Hemiciclo de resultados reales: a diferencia del de la sección Congreso (pintado por rating de
+   consenso, pre-elección), este agrupa cada carrera del board por su ESTADO DE RESULTADO real
+   (ganada D/R, en conteo con líder D/R, muy ajustada sin líder, o sin reportar) y lo vuelve a pintar
+   solo. Se reusa hemicycleSVG con 6 "segmentos" ordenados de izquierda (D) a derecha (R). */
+function resultsHemiBuckets(boardKey){
+  const list = raceList(boardKey);
+  const b = {calledD:0, reportingD:0, tied:0, pending:0, reportingR:0, calledR:0};
+  list.forEach(x=>{
+    const res = resultFor(boardKey, x.code);
+    if(res.status==="called"){ if(res.called_for==="D") b.calledD++; else b.calledR++; }
+    else if(res.status==="reporting"){
+      if(res.leader_party==="D") b.reportingD++;
+      else if(res.leader_party==="R") b.reportingR++;
+      else b.tied++;
+    } else b.pending++;
+  });
+  return {b, total:list.length};
+}
+function resultsHemicycle(boardKey){
+  const {b, total} = resultsHemiBuckets(boardKey);
+  if(total===0) return "";
+  const es = lang==="es";
+  const segs = [
+    {n:b.calledD, color:COLORS["safe-d"], label: es?"Demócrata — gana":"Democrat — wins"},
+    {n:b.reportingD, color:COLORS["lean-d"], label: es?"Demócrata — en conteo":"Democrat — reporting"},
+    {n:b.tied, color:COLORS["tossup"], label: es?"Muy ajustado, sin líder claro":"Too close to call"},
+    {n:b.pending, color:"var(--neutral-state)", label: es?"Sin reportar":"Not reported"},
+    {n:b.reportingR, color:COLORS["lean-r"], label: es?"Republicano — en conteo":"Republican — reporting"},
+    {n:b.calledR, color:COLORS["safe-r"], label: es?"Republicano — gana":"Republican — wins"}
+  ];
+  const stillToCall = total - b.calledD - b.calledR;
+  const majLabel = stillToCall>0
+    ? (es?`${stillToCall} por definir`:`${stillToCall} still to call`)
+    : (es?"Todas llamadas":"All called");
+  return hemicycleSVG(segs, total, majLabel, `D ${b.calledD}`, `R ${b.calledR}`, "");
+}
+function resultsHemicycleCard(boardKey){
+  const es = lang==="es";
+  return `<div class="card">
+    <h3>${t().boards[boardKey]} ${es?"— resultado en vivo":"— live result"}</h3>
+    ${resultsHemicycle(boardKey)}
+    <p class="sec-sub" style="margin-top:8px">${es
+      ? "A diferencia del hemiciclo de la sección Congreso (que muestra el escenario si se cumplen los ratings de consenso, antes de la elección), este se pinta con el resultado real de cada carrera a medida que se cuenta: ganada, en conteo (con el color del que lidera) o sin reportar."
+      : "Unlike the hemicycle in the Congress section (which shows the scenario if consensus ratings hold, before the election), this one is colored by each race's real result as it is counted: won, reporting (shaded by whoever leads), or not yet reported."}</p>
+  </div>`;
+}
 /* Tarjetas: todo toss-up de consenso + cualquier otra carrera que ya tenga datos reportados
    (si no, el % escrutado de una carrera "segura" que está contando queda sólo en el tooltip,
    que en touch/mobile no se puede activar). Se ordena para que lo que tiene dato vaya primero. */
 function paintResultsBoard(){
   const list = raceList(resultsBoard);
+  $("#resultsHemi").innerHTML = resultsHemicycleCard(resultsBoard);
   $("#resultsTiles").innerHTML = list.map(x=>tile(x, resultsBoard)).join("");
   const statusRank = s => s==="called" ? 0 : s==="reporting" ? 1 : 2;
   const watch = list
