@@ -146,6 +146,12 @@ h2.sec-title{font-size:27px;text-transform:uppercase;margin:28px 0 4px}
 #usMap path.state.no-race:hover{filter:none;stroke:var(--surface);stroke-width:1}
 #usMap path.state.is-toss{filter:drop-shadow(0 0 5px rgba(240,197,37,.75))}
 #usMap path.state.is-toss:hover{filter:brightness(1.07) drop-shadow(0 0 9px rgba(240,197,37,.95))}
+/* Llamada (AP call): borde nítido blanco para distinguir "ya decidido" de un color de calificación pre-electoral igual. */
+#usMap path.state.is-called{stroke:#fff;stroke-width:1.6;filter:drop-shadow(0 0 3px rgba(255,255,255,.5))}
+#usMap path.state.is-called:hover{stroke:#fff;stroke-width:2;filter:brightness(1.07) drop-shadow(0 0 5px rgba(255,255,255,.65))}
+/* Vuelco: se llamó para el partido que no defendía la banca/gobernación. */
+#usMap path.state.is-flip{stroke:var(--tossup);stroke-width:2.2;filter:drop-shadow(0 0 6px rgba(240,197,37,.85))}
+#usMap path.state.is-flip:hover{stroke:var(--tossup);stroke-width:2.6;filter:brightness(1.07) drop-shadow(0 0 9px rgba(240,197,37,1))}
 #usMap text.st-label{font:600 11px "DM Mono",monospace;fill:var(--ink);pointer-events:none;text-anchor:middle}
 #usMap text.st-label.on-dark{fill:#fff}
 #usMap text.st-label.on-light{fill:#16202e}

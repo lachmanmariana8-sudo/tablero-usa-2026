@@ -324,19 +324,41 @@ function tipHTML(id){
   return `<div class="t-state">${st.name}</div>${ds.map(d=>`<b>${d.district}</b> · ${d.dem} (D) vs ${d.rep} (R)`).join("<br>")}`;
 }
 
+/* Estado ya llamado (AP call en DATA_RESULTADOS): el mapa pasa a mostrar el color
+   definitivo (safe-d/safe-r) en vez de la calificación pre-electoral, igual que las
+   fichas de "Resultados". "flip" marca un vuelco: se llamó para el partido que no
+   defendía la banca/gobernación. */
+function effectiveRating(id){
+  const race = board==="senate" ? senByState[id] : board==="governors" ? govByState[id] : null;
+  if(!race) return {r:null, called:false, flip:false};
+  const res = resultFor(board, id);
+  if(res.status==="called"){
+    const r = res.called_for==="D" ? "safe-d" : "safe-r";
+    const defending = board==="senate" ? race.defending_party : race.incumbent_party;
+    return {r, called:true, flip: !!(defending && res.called_for!==defending)};
+  }
+  return {r: race.rating, called:false, flip:false};
+}
 function paintBoard(){
   const counts = {}; RATINGS.forEach(r=>counts[r]=0);
   MAP.states.forEach(st=>{
-    const p = $("#st-"+st.id); let r = null;
-    if(board==="senate") r = senByState[st.id] && senByState[st.id].rating;
-    else if(board==="governors") r = govByState[st.id] && govByState[st.id].rating;
-    if(board!=="house" && r){ p.setAttribute("fill", COLORS[r]); p.classList.remove("no-race"); p.classList.toggle("is-toss", r==="tossup"); counts[r]++; }
-    else { p.setAttribute("fill", "var(--neutral-state)"); p.classList.remove("is-toss"); if(board!=="house") p.classList.add("no-race"); else p.classList.remove("no-race"); }
+    const p = $("#st-"+st.id);
+    const {r, called, flip} = board==="house" ? {r:null,called:false,flip:false} : effectiveRating(st.id);
+    if(board!=="house" && r){
+      p.setAttribute("fill", COLORS[r]); p.classList.remove("no-race");
+      p.classList.toggle("is-toss", r==="tossup");
+      p.classList.toggle("is-called", called);
+      p.classList.toggle("is-flip", flip);
+      counts[r]++;
+    } else {
+      p.setAttribute("fill", "var(--neutral-state)"); p.classList.remove("is-toss","is-called","is-flip");
+      if(board!=="house") p.classList.add("no-race"); else p.classList.remove("no-race");
+    }
   });
   // labels contrast
   document.querySelectorAll("#usMap text.st-label").forEach(el=>{
     const id = el.textContent;
-    const r = board==="senate" ? (senByState[id]&&senByState[id].rating) : board==="governors" ? (govByState[id]&&govByState[id].rating) : null;
+    const {r} = board==="house" ? {r:null,called:false,flip:false} : effectiveRating(id);
     el.classList.toggle("on-dark", !!(r && DARK_FILLS.has(r)));
     el.classList.toggle("on-light", !!(r && !DARK_FILLS.has(r)));
   });
