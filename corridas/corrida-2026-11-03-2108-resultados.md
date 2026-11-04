@@ -14,3 +14,7 @@ Repasé con WebSearch/WebFetch Georgia, Carolina del Sur (urnas cerradas a las 1
 ## Pendiente para la próxima corrida
 
 Próxima tanda de cierres relevantes: 19:30 ET (Carolina del Norte, Ohio especial, Virginia Occidental). Seguir el conteo de Kentucky y confirmar si alguna cadena mayor llama Georgia o Carolina del Sur.
+
+## Nota de merge (hubo corrida manual en paralelo)
+
+Al hacer `git pull --rebase` hubo conflicto en `data/resultados.js` con una corrida manual casi simultánea (commit `c2893f7`, 21:10 ART) que había consultado la Secretaría de Estado de Kentucky como fuente oficial: a esa hora marcaba 0 de 120 condados informados, con sello de última actualización justo al cierre de urnas (18:00:02 ET). Se resolvió conservando ambos hallazgos: Virginia sigue llamada y Kentucky sigue como "reporting" con el 9.28%/D+4.5 de Fox (ninguna fuente contradice que Kentucky *no* está llamada, así que no cambia el estado), y se agregó una nota de discrepancia en `status_note_es/en` explicando que el portal oficial de Kentucky puede actualizar más lento que el feed que usan las cadenas.
