@@ -646,26 +646,49 @@ function hemicycleSVG(segments, total, majorityLabel, leftLabel, rightLabel, cen
   const W=820, H=424, cx=W/2, cy=H-46, r0=150, r1=320;
   const rows = total<=120 ? 4 : 11;
   const radii=[]; for(let i=0;i<rows;i++) radii.push(r0 + (r1-r0)*i/(rows-1));
-  const sumR = radii.reduce((a,b)=>a+b,0);
-  const per = radii.map(r=>Math.round(N*r/sumR));
-  per[rows-1] += N - per.reduce((a,b)=>a+b,0);
+  /* Reparto proporcional por fila (método del mayor resto / Hamilton): cada segmento
+     de color se distribuye entre las filas según el peso (radio) de cada una, en vez de
+     volcar un índice global continuo sobre filas de densidad angular distinta. Así toda
+     fila con suficiente peso muestra representación de cada color, en el mismo orden
+     izquierda→derecha, evitando el patrón "deshilachado" de bandas que desaparecen en
+     algunas filas y no en otras. */
+  function apportion(n, weights){
+    const sumW = weights.reduce((a,b)=>a+b,0);
+    const raw = weights.map(w=>n*w/sumW);
+    const floors = raw.map(Math.floor);
+    let used = floors.reduce((a,b)=>a+b,0);
+    const order = raw.map((r,i)=>({i, frac:r-floors[i]})).sort((a,b)=>b.frac-a.frac);
+    const result = floors.slice();
+    for(let k=0;k<n-used;k++) result[order[k].i]++;
+    return result;
+  }
+  const rowSegs = radii.map(()=>[]);
+  segments.forEach(s=>{
+    if(s.n<=0) return;
+    const alloc = apportion(s.n, radii);
+    alloc.forEach((n,ri)=>{ if(n>0) rowSegs[ri].push({s, n}); });
+  });
+  const per = rowSegs.map(list=>list.reduce((a,e)=>a+e.n,0));
   const rowGap = (r1-r0)/(rows-1);
   let minChord = Infinity;
   per.forEach((n,ri)=>{ if(n>1) minChord = Math.min(minChord, Math.PI*radii[ri]/(n-1)); });
   const dotR = Math.max(2.5, Math.min(rowGap*0.42, minChord*0.42));
-  const pts=[];
-  per.forEach((n,ri)=>{ const r=radii[ri];
-    for(let k=0;k<n;k++){ const a = n===1 ? Math.PI/2 : Math.PI*(1 - k/(n-1)); pts.push({x:cx+r*Math.cos(a), y:cy-r*Math.sin(a), a, ri}); }
-  });
-  pts.sort((p,q)=> q.a - p.a || p.y - q.y);
-  const flat=[]; segments.forEach(s=>{ for(let i=0;i<s.n;i++) flat.push(s); });
   /* De afuera hacia adentro: la fila de mayor radio (ri más alto) entra primero. */
-  const dots = pts.map((p,i)=>{
-    const s = flat[i];
-    const paint = s.hollow ? `fill="var(--surface)" stroke="${s.color}" stroke-width="2"` : `fill="${s.color}"`;
-    const tossCls = (!s.hollow && s.color === COLORS["tossup"]) ? " seat-toss" : "";
-    const delay = ((rows-1-p.ri) * 90 + (p.ri%2)*6).toFixed(0);
-    return `<circle class="dot-in${tossCls}" style="animation-delay:${delay}ms" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${(s.hollow?dotR-1:dotR).toFixed(1)}" ${paint}><title>${s.label} (${s.n})</title></circle>`;
+  const dots = rowSegs.map((list,ri)=>{
+    const n = per[ri], r = radii[ri];
+    const delay = ((rows-1-ri) * 90 + (ri%2)*6).toFixed(0);
+    let k=0, out="";
+    list.forEach(({s,n:cnt})=>{
+      for(let j=0;j<cnt;j++){
+        const a = n===1 ? Math.PI/2 : Math.PI*(1 - k/(n-1));
+        const x = cx+r*Math.cos(a), y = cy-r*Math.sin(a);
+        const paint = s.hollow ? `fill="var(--surface)" stroke="${s.color}" stroke-width="2"` : `fill="${s.color}"`;
+        const tossCls = (!s.hollow && s.color === COLORS["tossup"]) ? " seat-toss" : "";
+        out += `<circle class="dot-in${tossCls}" style="animation-delay:${delay}ms" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(s.hollow?dotR-1:dotR).toFixed(1)}" ${paint}><title>${s.label} (${s.n})</title></circle>`;
+        k++;
+      }
+    });
+    return out;
   }).join("");
   return `<svg class="hemi" viewBox="0 0 ${W} ${H}" role="img" aria-label="${leftLabel} · ${rightLabel}">
     ${dots}
