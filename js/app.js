@@ -36,6 +36,8 @@ es:{
     nextClose:"Próximo cierre de urnas", statusTitle:"Estado de la jornada",
     watchTitle:"Carreras para seguir", watchSub:"Los toss-ups de consenso, con el resultado en vivo a medida que se cuenta.",
     pending:"Sin datos", reporting:"Contando", reportingLow:"escrutado", called:"Gana", wins:"gana",
+    legendDem:"Demócrata", legendRep:"Republicano",
+    legendNote:"El color del punto, la barra de % escrutado, la insignia y el nombre del candidato muestran qué partido lidera o ganó, según la fuente citada en cada tarjeta. El tono de fondo de las fichas sin resultado es la calificación de consenso previa a la elección (de \"Seguro D\" a \"Seguro R\", igual que en el mapa nacional), no un resultado.",
     pendingNote:"Sin resultados reportados.", noTossups:"Sin toss-ups en este tablero.",
     calledOf:n=>`de ${n} en juego`,
     houseKeyNote:"Sólo los distritos toss-up de consenso; no es el resultado de la Cámara completa."
@@ -112,6 +114,8 @@ en:{
     nextClose:"Next poll closing", statusTitle:"Status of the night",
     watchTitle:"Races to watch", watchSub:"Consensus toss-ups, with live results as the count comes in.",
     pending:"No data", reporting:"Counting", reportingLow:"reporting", called:"Winner", wins:"wins",
+    legendDem:"Democrat", legendRep:"Republican",
+    legendNote:"The dot, the % reporting bar, the badge and the candidate name show which party is leading or won, per the source cited on each card. The background shade on tiles with no result is the pre-election consensus rating (from \"Safe D\" to \"Safe R\", same as the national map), not a result.",
     pendingNote:"No results reported.", noTossups:"No toss-ups on this board.",
     calledOf:n=>`of ${n} up for election`,
     houseKeyNote:"Consensus toss-up districts only; not the full House result."
@@ -502,7 +506,12 @@ function renderResultados(){
   <div class="card card-pending">
     <div class="inc-k">${rt.statusTitle}</div><p>${statusNote||""}</p>
   </div>
-  <div class="board-switch" id="resultsBoardSwitch" style="margin-top:16px"></div>
+  <div class="legend" id="resultsLegend" style="margin-top:16px;padding-top:0;border-top:none">
+    <div class="lg"><span class="sw" style="background:var(--dem)"></span>${rt.legendDem}</div>
+    <div class="lg"><span class="sw" style="background:var(--gop)"></span>${rt.legendRep}</div>
+  </div>
+  <p class="sec-sub" style="margin-top:4px">${rt.legendNote}</p>
+  <div class="board-switch" id="resultsBoardSwitch" style="margin-top:12px"></div>
   <div class="tile-grid" id="resultsTiles"></div>
   <h2 class="sec-title" style="font-size:20px">${rt.watchTitle}</h2><p class="sec-sub">${rt.watchSub}</p>
   <div class="race-list" id="resultsWatchList"></div>`;
