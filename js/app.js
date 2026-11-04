@@ -420,7 +420,10 @@ function tallyBoard(boardKey){
 function statusBadge(res){
   const rt = t().results;
   if(res.status==="called") return `<span class="res-badge res-badge-called party-${res.called_for==="D"?"d":"r"}">${rt.called} ${res.called_for}</span>`;
-  if(res.status==="reporting") return `<span class="res-badge res-badge-live">${rt.reporting}${res.pct!=null?" · "+fmtNum(res.pct)+"%":""}</span>`;
+  if(res.status==="reporting"){
+    const pc = res.leader_party==="D"?" party-d":res.leader_party==="R"?" party-r":"";
+    return `<span class="res-badge res-badge-live${pc}">${rt.reporting}${res.pct!=null?" · "+fmtNum(res.pct)+"%":""}</span>`;
+  }
   return `<span class="res-badge res-badge-pending">${rt.pending}</span>`;
 }
 /* Se recuerda el estado de la corrida anterior para que, al cambiar (sin reportar→contando→llamada),
@@ -430,23 +433,28 @@ function tile(x, boardKey){
   const res = resultFor(boardKey, x.code);
   const base = COLORS[x.rating] || "var(--neutral-state)";
   const cls = res.status==="reporting" ? "is-live" : res.status==="called" ? "is-called" : "";
+  const partyCls = res.status==="reporting" && res.leader_party ? " party-"+(res.leader_party==="D"?"d":"r") : "";
   const bg = res.status==="called" ? COLORS[res.called_for==="D"?"safe-d":"safe-r"] : `color-mix(in srgb, ${base} 22%, var(--surface-2))`;
   const tip = `${x.name}${res.status!=="not_reported"?" · "+(res.leader||(res.called_for?(res.called_for==="D"?x.dem:x.rep):"")) + (res.margin?" "+res.margin:""):""}`;
   const key = boardKey+":"+x.code;
   const changed = prevTileStatus[key] !== undefined && prevTileStatus[key] !== res.status;
   prevTileStatus[key] = res.status;
-  return `<div class="tile ${cls}${changed?" tile-flash":""}" style="background:${bg}" title="${tip}"><span class="tile-dot"></span>${x.code}</div>`;
+  return `<div class="tile ${cls}${partyCls}${changed?" tile-flash":""}" style="background:${bg}" title="${tip}"><span class="tile-dot"></span>${x.code}</div>`;
 }
 function resultRaceCard(x, boardKey){
   const res = resultFor(boardKey, x.code), rt = t().results;
+  const partyChip = p => p==="D"?"chip-d":p==="R"?"chip-r":"";
   let body;
-  if(res.status==="called") body = `<span class="rc-margin">${res.called_for==="D"?x.dem:x.rep} ${rt.wins}</span>${res.margin?" · "+res.margin:""}`;
-  else if(res.status==="reporting") body = `${res.pct!=null?fmtNum(res.pct)+"% "+rt.reportingLow:""}${res.leader?" · "+res.leader+(res.margin?" +"+res.margin:""):""}`;
-  else body = rt.pendingNote;
+  if(res.status==="called") body = `<span class="rc-margin ${partyChip(res.called_for)}">${res.called_for==="D"?x.dem:x.rep} ${rt.wins}</span>${res.margin?" · "+res.margin:""}`;
+  else if(res.status==="reporting"){
+    const leaderSpan = res.leader ? `<span class="${partyChip(res.leader_party)}">${res.leader}</span>` : "";
+    body = `${res.pct!=null?fmtNum(res.pct)+"% "+rt.reportingLow:""}${res.leader?" · "+leaderSpan+(res.margin?" +"+res.margin:""):""}`;
+  } else body = rt.pendingNote;
+  const fillCls = res.status==="called" ? (res.called_for==="D"?"fill-d":"fill-r") : res.leader_party==="D"?"fill-d":res.leader_party==="R"?"fill-r":"";
   return `<div class="race-card" style="border-left-color:${COLORS[x.rating]}">
     <div class="rc-top"><span class="rc-state">${x.name}</span>${statusBadge(res)}</div>
     <div class="rc-cand">${candRow(x.dem, x.rep)}</div>
-    <div class="rc-result">${body}${res.pct!=null?`<div class="pct-bar"><div class="pct-bar-fill" style="width:${res.pct}%"></div></div>`:""}</div>
+    <div class="rc-result">${body}${res.pct!=null?`<div class="pct-bar"><div class="pct-bar-fill ${fillCls}" style="width:${res.pct}%"></div></div>`:""}</div>
     ${res.source?`<div class="src">${res.source}${res.as_of?" · "+res.as_of:""}</div>`:""}
   </div>`;
 }
@@ -486,9 +494,9 @@ function renderResultados(){
     </div>
   </div>
   <div class="card-row">
-    <div class="stat stat-live"><div class="k">${rt.senateK}</div><div class="v">${tallies.senate.d}–${tallies.senate.r}</div><div class="d">${rt.calledOf(tallies.senate.total)}</div></div>
-    <div class="stat stat-live"><div class="k">${rt.houseK}</div><div class="v">${tallies.house.d}–${tallies.house.r}</div><div class="d">${rt.houseKeyNote}</div></div>
-    <div class="stat stat-live"><div class="k">${rt.govK}</div><div class="v">${tallies.governors.d}–${tallies.governors.r}</div><div class="d">${rt.calledOf(tallies.governors.total)}</div></div>
+    <div class="stat stat-live"><div class="k">${rt.senateK}</div><div class="v"><span class="chip-d">${tallies.senate.d}</span>–<span class="chip-r">${tallies.senate.r}</span></div><div class="d">${rt.calledOf(tallies.senate.total)}</div></div>
+    <div class="stat stat-live"><div class="k">${rt.houseK}</div><div class="v"><span class="chip-d">${tallies.house.d}</span>–<span class="chip-r">${tallies.house.r}</span></div><div class="d">${rt.houseKeyNote}</div></div>
+    <div class="stat stat-live"><div class="k">${rt.govK}</div><div class="v"><span class="chip-d">${tallies.governors.d}</span>–<span class="chip-r">${tallies.governors.r}</span></div><div class="d">${rt.calledOf(tallies.governors.total)}</div></div>
     <div class="stat stat-live"><div class="k">${rt.nextClose}</div><div class="v">${nc?nc.label+" ET":"—"}</div><div class="d">${nc?(lang==="es"?nc.states:nc.states.map(enStateLabel)).slice(0,3).join(", ")+(nc.states.length>3?"…":""):""}</div></div>
   </div>
   <div class="card card-pending">

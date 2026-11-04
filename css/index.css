@@ -307,6 +307,8 @@ h2.sec-title{font-size:27px;text-transform:uppercase;margin:28px 0 4px}
 .res-badge{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;border-radius:6px;padding:2px 8px;white-space:nowrap}
 .res-badge-pending{background:var(--surface-2);color:var(--ink-3)}
 .res-badge-live{background:color-mix(in srgb,var(--live) 18%, transparent);color:var(--live)}
+.res-badge-live.party-d{background:color-mix(in srgb,var(--dem) 18%, transparent);color:var(--dem)}
+.res-badge-live.party-r{background:color-mix(in srgb,var(--gop) 18%, transparent);color:var(--gop)}
 .res-badge-called{color:#fff}
 .res-badge-called.party-d{background:var(--safe-d)}
 .res-badge-called.party-r{background:var(--safe-r)}
@@ -317,14 +319,22 @@ h2.sec-title{font-size:27px;text-transform:uppercase;margin:28px 0 4px}
 .tile:hover{transform:translateY(-2px)}
 .tile .tile-dot{position:absolute;top:4px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--ink-3);opacity:.45}
 .tile.is-live .tile-dot{background:var(--live);opacity:1}
+.tile.is-live.party-d .tile-dot{background:var(--dem)}
+.tile.is-live.party-r .tile-dot{background:var(--gop)}
 .tile.is-called{color:#fff}
 .tile.is-called .tile-dot{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
 @media (prefers-reduced-motion: no-preference){ .tile.is-live .tile-dot{animation:pulse 1.4s infinite} }
 
 .pct-bar{height:5px;border-radius:3px;background:var(--surface-2);margin-top:7px;overflow:hidden}
 .pct-bar-fill{height:100%;border-radius:3px;background:var(--accent)}
+.pct-bar-fill.fill-d{background:var(--dem)}
+.pct-bar-fill.fill-r{background:var(--gop)}
 .race-card .rc-result{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);font-size:12px;color:var(--ink-2)}
 .race-card .rc-result .rc-margin{font-family:"DM Mono",monospace;font-weight:700;color:var(--ink)}
+.race-card .rc-result .rc-margin.chip-d{color:var(--dem)}
+.race-card .rc-result .rc-margin.chip-r{color:var(--gop)}
+.stat-live .v .chip-d{color:var(--dem);text-shadow:none}
+.stat-live .v .chip-r{color:var(--gop);text-shadow:none}
 
 /* ---------- fuentes ---------- */
 .src-list{padding-left:20px;margin-top:10px}
